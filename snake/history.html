@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>遊戲紀錄</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111217;
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    color: #e0e0e0;
+    padding: 32px 24px;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  h1 { font-size: 1.1rem; color: #f46800; letter-spacing: 4px; text-transform: uppercase; }
+  .back { font-size: 0.78rem; color: #555; text-decoration: none; letter-spacing: 1px; }
+  .back:hover { color: #f46800; }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .tab {
+    padding: 6px 18px;
+    border-radius: 4px;
+    border: 1px solid #2a2d3a;
+    background: #1a1d27;
+    color: #888;
+    font-size: 0.82rem;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .tab.active { border-color: #f46800; color: #f46800; }
+
+  .player-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: #1a1d27;
+    border: 1px solid #f46800;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+  .player-bar.show { display: flex; }
+  .player-name { color: #f46800; font-weight: bold; flex: 1; }
+  .clear-btn {
+    background: none;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #555;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  .clear-btn:hover { border-color: #f46800; color: #f46800; }
+
+  .summary {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .stat-box {
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 0.78rem;
+    color: #888;
+  }
+  .stat-box span { display: block; font-size: 1.2rem; color: #f46800; font-weight: bold; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    color: #555;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-bottom: 1px solid #1e2130;
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #1a1d27;
+    font-size: 0.83rem;
+  }
+  tr:hover td { background: #1a1d27; }
+  .td-rank { color: #555; width: 40px; }
+  .td-name {
+    color: #ccc;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: #333;
+  }
+  .td-name:hover { color: #f46800; }
+  .td-score { color: #f46800; font-weight: bold; width: 80px; }
+  .td-time { color: #555; font-size: 0.75rem; }
+  .medal { font-size: 0.95rem; }
+
+  .pagination {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #555;
+  }
+  .page-btn {
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 4px;
+    color: #888;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 0.78rem;
+  }
+  .page-btn:hover:not(:disabled) { border-color: #f46800; color: #f46800; }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .empty { color: #444; font-size: 0.85rem; padding: 24px 12px; }
+  #loading { color: #555; padding: 24px 12px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back" href="/">← 首頁</a>
+  <h1>📋 遊戲紀錄</h1>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-all" onclick="switchTab('all')">全部紀錄</div>
+  <div class="tab" id="tab-player" onclick="switchTab('player')">個人查詢</div>
+</div>
+
+<div class="player-bar" id="player-bar">
+  <span>玩家：</span>
+  <span class="player-name" id="player-label"></span>
+  <button class="clear-btn" onclick="clearPlayer()">× 清除篩選</button>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<div id="loading">載入中…</div>
+<table id="table" style="display:none">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>玩家</th>
+      <th>分數</th>
+      <th>時間</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<div class="pagination" id="pagination"></div>
+
+<script>
+const API = 'http://localhost:5000';
+const PAGE = 50;
+let currentTab = 'all';
+let currentPlayer = null;
+let currentOffset = 0;
+let totalRecords = 0;
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+  document.getElementById('tab-player').classList.toggle('active', tab === 'player');
+
+  if (tab === 'all') {
+    clearPlayer();
+  } else {
+    const name = prompt('輸入玩家名字：');
+    if (name && name.trim()) {
+      filterByPlayer(name.trim());
+    } else {
+      switchTab('all');
+    }
+  }
+}
+
+function filterByPlayer(name) {
+  currentPlayer = name;
+  currentOffset = 0;
+  document.getElementById('player-bar').classList.add('show');
+  document.getElementById('player-label').textContent = name;
+  load();
+}
+
+function clearPlayer() {
+  currentPlayer = null;
+  currentOffset = 0;
+  document.getElementById('player-bar').classList.remove('show');
+  document.getElementById('tab-all').classList.add('active');
+  document.getElementById('tab-player').classList.remove('active');
+  currentTab = 'all';
+  load();
+}
+
+async function load() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('table').style.display = 'none';
+  document.getElementById('summary').innerHTML = '';
+  document.getElementById('pagination').innerHTML = '';
+
+  try {
+    let rows, total;
+
+    if (currentPlayer) {
+      const res = await fetch(`${API}/api/history/${encodeURIComponent(currentPlayer)}`);
+      rows = await res.json();
+      total = rows.length;
+      // paginate client-side for personal view
+      const sliced = rows.slice(currentOffset, currentOffset + PAGE);
+      renderSummaryPlayer(rows);
+      renderTable(sliced, currentOffset);
+      totalRecords = total;
+      renderPagination();
+    } else {
+      const res = await fetch(`${API}/api/history?limit=${PAGE}&offset=${currentOffset}`);
+      const data = await res.json();
+      rows = data.rows;
+      total = data.total;
+      totalRecords = total;
+      renderSummaryAll(total);
+      renderTable(rows, currentOffset);
+      renderPagination();
+    }
+  } catch(e) {
+    document.getElementById('loading').textContent = '無法連線到後端';
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('table').style.display = 'table';
+}
+
+function renderSummaryAll(total) {
+  document.getElementById('summary').innerHTML = `
+    <div class="stat-box">總局數<span>${total}</span></div>
+  `;
+}
+
+function renderSummaryPlayer(rows) {
+  if (!rows.length) { document.getElementById('summary').innerHTML = ''; return; }
+  const scores = rows.map(r => r.score);
+  const best = Math.max(...scores);
+  const avg  = (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1);
+  document.getElementById('summary').innerHTML = `
+    <div class="stat-box">遊戲次數<span>${rows.length}</span></div>
+    <div class="stat-box">最高分<span>${best}</span></div>
+    <div class="stat-box">平均分<span>${avg}</span></div>
+  `;
+}
+
+function renderTable(rows, offset) {
+  if (!rows.length) {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="empty">沒有紀錄</td></tr>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('tbody').innerHTML = rows.map((r, i) => {
+    const rank = offset + i + 1;
+    const medal = rank <= 3 && offset === 0 ? `<span class="medal">${medals[rank-1]}</span>` : rank;
+    const time = r.created_at ? r.created_at.replace('T', ' ').slice(0, 16) : '-';
+    const nameCell = currentPlayer
+      ? `<td class="td-name" style="cursor:default;text-decoration:none;color:#ccc">${escHtml(r.name || currentPlayer)}</td>`
+      : `<td class="td-name" onclick="filterByPlayer('${escAttr(r.name)}')">${escHtml(r.name)}</td>`;
+    return `
+      <tr>
+        <td class="td-rank">${medal}</td>
+        ${nameCell}
+        <td class="td-score">${r.score}</td>
+        <td class="td-time">${time}</td>
+      </tr>`;
+  }).join('');
+}
+
+function renderPagination() {
+  const total = totalRecords;
+  if (total <= PAGE) { document.getElementById('pagination').innerHTML = ''; return; }
+  const page = Math.floor(currentOffset / PAGE) + 1;
+  const pages = Math.ceil(total / PAGE);
+  document.getElementById('pagination').innerHTML = `
+    <button class="page-btn" onclick="changePage(-1)" ${currentOffset === 0 ? 'disabled' : ''}>← 上一頁</button>
+    <span>${page} / ${pages} 頁（共 ${total} 筆）</span>
+    <button class="page-btn" onclick="changePage(1)" ${currentOffset + PAGE >= total ? 'disabled' : ''}>下一頁 →</button>
+  `;
+}
+
+function changePage(dir) {
+  currentOffset = Math.max(0, currentOffset + dir * PAGE);
+  if (currentPlayer) {
+    // re-use cached data — just reload
+    load();
+  } else {
+    load();
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s).replace(/'/g,"\\'");
+}
+
+load();
+</script>
+</body>
+</html>
