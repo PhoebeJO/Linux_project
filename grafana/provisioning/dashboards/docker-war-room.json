@@ -1,0 +1,190 @@
+{
+  "title": "⚡ Docker 容器戰情室",
+  "uid": "docker-war-room",
+  "tags": ["docker", "hello-kitty"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "options": {
+        "mode": "html",
+        "content": "<style>.warroom{font-family:'Share Tech Mono',monospace;background:linear-gradient(160deg,#050d1a,#0a1628,#050d1a);padding:18px;border-radius:10px;border:1px solid #1a3a5c}.title{text-align:center;font-size:28px;font-weight:bold;color:#00d4ff;letter-spacing:6px;text-transform:uppercase;text-shadow:0 0 20px #00d4ff,0 0 40px #0088ff;margin-bottom:4px}.subtitle{text-align:center;font-size:11px;color:#4a9eff;letter-spacing:4px;margin-bottom:18px}.grid{display:flex;justify-content:space-around;flex-wrap:wrap;gap:12px}.card{background:#060f1e;border:1px solid #1e3a5f;border-radius:8px;padding:14px 20px;text-align:center;min-width:130px;position:relative;overflow:hidden;transition:.2s}.card:hover{border-color:#00d4ff;box-shadow:0 0 16px #00d4ff30;transform:translateY(-2px)}.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00d4ff,transparent);animation:scan 3s linear infinite}@keyframes scan{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:#00ff88;box-shadow:0 0 8px #00ff88;animation:pulse 1.5s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}.card-title{font-size:10px;color:#4a9eff;letter-spacing:2px;margin-bottom:6px}.card-status{font-size:14px;color:#e0e0e0;font-weight:bold}.badge{display:inline-block;background:#00ff8815;border:1px solid #00ff8866;color:#00ff88;border-radius:4px;padding:2px 10px;font-size:10px;margin-top:4px}.scanline{text-align:center;color:#1a3a5c;font-size:11px;letter-spacing:3px;margin-top:14px;animation:fade 4s ease-in-out infinite}@keyframes fade{0%,100%{opacity:.4}50%{opacity:1}}</style><div class='warroom'><div class='title'>⚡ IT Operations War Room ⚡</div><div class='subtitle'>REAL-TIME DOCKER INFRASTRUCTURE MONITORING</div><div class='grid'><div class='card'><div class='card-title'>PROMETHEUS</div><div class='card-status'><span class='dot'></span>ONLINE</div><div class='badge'>:9090</div></div><div class='card'><div class='card-title'>GRAFANA</div><div class='card-status'><span class='dot'></span>ONLINE</div><div class='badge'>:3000</div></div><div class='card'><div class='card-title'>ALERTMANAGER</div><div class='card-status'><span class='dot'></span>ONLINE</div><div class='badge'>:9093</div></div><div class='card'><div class='card-title'>NODE EXPORTER</div><div class='card-status'><span class='dot'></span>ONLINE</div><div class='badge'>:9100</div></div><div class='card'><div class='card-title'>cADVISOR</div><div class='card-status'><span class='dot'></span>ONLINE</div><div class='badge'>:8080</div></div></div><div class='scanline'>▓▓▓ SYSTEM STATUS: ALL SERVICES OPERATIONAL ▓▓▓</div></div>"
+      }
+    },
+    {
+      "id": 2,
+      "title": "🌺 主機 CPU 使用率",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 8, "w": 6, "h": 6 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0, "max": 100,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00d4ff", "value": null },
+              { "color": "#f5a623", "value": 50 },
+              { "color": "#e02020", "value": 80 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[1m])) * 100)",
+        "legendFormat": "CPU %"
+      }],
+      "datasource": { "type": "prometheus", "uid": "${datasource}" }
+    },
+    {
+      "id": 3,
+      "title": "🍹 主機記憶體使用率",
+      "type": "gauge",
+      "gridPos": { "x": 6, "y": 8, "w": 6, "h": 6 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0, "max": 100,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00d4ff", "value": null },
+              { "color": "#f5a623", "value": 60 },
+              { "color": "#e02020", "value": 85 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+        "legendFormat": "Memory %"
+      }],
+      "datasource": { "type": "prometheus", "uid": "${datasource}" }
+    },
+    {
+      "id": 4,
+      "title": "🌴 各容器 CPU 使用率",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 6 },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showUnfilled": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0, "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00d4ff", "value": null },
+              { "color": "#f5a623", "value": 30 },
+              { "color": "#e02020", "value": 70 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "sum(rate(container_cpu_usage_seconds_total{name!=\"\"}[1m])) by (name) * 100",
+        "legendFormat": "{{ name }}"
+      }],
+      "datasource": { "type": "prometheus", "uid": "${datasource}" }
+    },
+    {
+      "id": 5,
+      "title": "☀️ 容器 CPU 趨勢（壓測時會飆升）",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 9 },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "spanNulls": false,
+            "gradientMode": "opacity"
+          }
+        }
+      },
+      "targets": [{
+        "expr": "sum(rate(container_cpu_usage_seconds_total{name!=\"\"}[1m])) by (name) * 100",
+        "legendFormat": "{{ name }}"
+      }],
+      "datasource": { "type": "prometheus", "uid": "${datasource}" }
+    },
+    {
+      "id": 6,
+      "title": "🎮 TETRIS — 監控摸魚區",
+      "type": "text",
+      "gridPos": { "x": 0, "y": 23, "w": 9, "h": 22 },
+      "options": {
+        "mode": "html",
+        "content": "<div style='display:flex;gap:14px;background:#050d1a;padding:12px;border-radius:8px;border:1px solid #1a3a5c;font-family:monospace;user-select:none'><div><div style='color:#4a9eff;font-size:10px;letter-spacing:2px;margin-bottom:6px;text-align:center'>⚡ TETRIS — CLICK TO START</div><canvas id='tc' width='200' height='400' style='border:1px solid #1e3a5f;background:#030810;display:block;cursor:pointer'></canvas></div><div style='color:#00d4ff;min-width:85px'><div style='color:#4a9eff;font-size:9px;letter-spacing:2px;margin-bottom:2px'>SCORE</div><div id='ts' style='font-size:20px;color:#00ff88;text-shadow:0 0 8px #00ff88;margin-bottom:10px'>0</div><div style='color:#4a9eff;font-size:9px;letter-spacing:2px;margin-bottom:2px'>LINES</div><div id='tl' style='font-size:16px;margin-bottom:10px'>0</div><div style='color:#4a9eff;font-size:9px;letter-spacing:2px;margin-bottom:2px'>LEVEL</div><div id='tlv' style='font-size:16px;margin-bottom:10px'>1</div><div style='color:#4a9eff;font-size:9px;letter-spacing:2px;margin-bottom:4px'>NEXT</div><canvas id='tnc' width='72' height='72' style='border:1px solid #1e3a5f;background:#030810;display:block;margin-bottom:14px'></canvas><div style='font-size:9px;color:#4a9eff;line-height:2'>← → 移動<br>↑ 旋轉<br>↓ 加速<br>SPACE 硬降<br>P 暫停<br>R 重開</div><div id='tst' style='margin-top:10px;font-size:10px;color:#f5a623'></div></div></div><script>(function(){var c=document.getElementById('tc'),x=c.getContext('2d'),nc=document.getElementById('tnc'),nx=nc.getContext('2d'),B=20,CO=10,RO=20,SH=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[0,1,1],[1,1,0]],[[1,1,0],[0,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]]],CL=['#00d4ff','#f5a623','#b44fff','#00ff88','#ff4444','#ff9e2c','#4a9eff'],board,piece,nxt,score,lines,level,over,paused,tmr,started=false;function mkB(){board=[];for(var i=0;i<RO;i++)board.push(new Array(CO).fill(0));}function mkP(){var i=Math.floor(Math.random()*SH.length);return{s:SH[i].map(function(r){return r.slice();}),c:CL[i],x:3,y:0};}function dBlk(ctx,col,row,color,bs){bs=bs||B;ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=5;ctx.fillRect(col*bs+1,row*bs+1,bs-2,bs-2);ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,0.18)';ctx.fillRect(col*bs+1,row*bs+1,bs-2,3);}function draw(){x.fillStyle='#030810';x.fillRect(0,0,c.width,c.height);x.strokeStyle='#0d1f36';x.lineWidth=0.5;for(var r=0;r<RO;r++){x.beginPath();x.moveTo(0,r*B);x.lineTo(CO*B,r*B);x.stroke();}for(var col=0;col<CO;col++){x.beginPath();x.moveTo(col*B,0);x.lineTo(col*B,RO*B);x.stroke();}board.forEach(function(row,r){row.forEach(function(v,col){if(v)dBlk(x,col,r,v);});});if(piece&&!over){var gy=piece.y;while(vld(piece.s,piece.x,gy+1))gy++;piece.s.forEach(function(row,r){row.forEach(function(v,col){if(v){x.fillStyle='rgba(255,255,255,0.06)';x.fillRect((piece.x+col)*B+1,(gy+r)*B+1,B-2,B-2);}});});piece.s.forEach(function(row,r){row.forEach(function(v,col){if(v)dBlk(x,piece.x+col,piece.y+r,piece.c);});});}nx.fillStyle='#030810';nx.fillRect(0,0,nc.width,nc.height);if(nxt){var ox=Math.floor((4-nxt.s[0].length)/2),oy=Math.floor((4-nxt.s.length)/2);nxt.s.forEach(function(row,r){row.forEach(function(v,col){if(v)dBlk(nx,ox+col,oy+r,nxt.c,16);});});}}function vld(s,px,py){return s.every(function(row,r){return row.every(function(v,col){if(!v)return true;var nx2=px+col,ny=py+r;return nx2>=0&&nx2<CO&&ny<RO&&(ny<0||!board[ny][nx2]);});});}function rot(s){return s[0].map(function(_,i){return s.map(function(r){return r[i];}).reverse();});}function lock(){piece.s.forEach(function(row,r){row.forEach(function(v,col){if(v&&piece.y+r>=0)board[piece.y+r][piece.x+col]=piece.c;});});var cl=0;for(var r=RO-1;r>=0;r--){if(board[r].every(function(v){return v;})){board.splice(r,1);board.unshift(new Array(CO).fill(0));cl++;r++;}}if(cl){lines+=cl;score+=[0,100,300,500,800][cl]*level;level=Math.floor(lines/10)+1;clearInterval(tmr);tmr=setInterval(tick,Math.max(80,800-level*70));document.getElementById('ts').textContent=score;document.getElementById('tl').textContent=lines;document.getElementById('tlv').textContent=level;}piece=nxt;nxt=mkP();if(!vld(piece.s,piece.x,piece.y)){over=true;clearInterval(tmr);x.fillStyle='rgba(0,0,0,0.7)';x.fillRect(0,0,c.width,c.height);x.fillStyle='#ff4444';x.font='bold 18px monospace';x.textAlign='center';x.fillText('GAME OVER',c.width/2,c.height/2-12);x.fillStyle='#4a9eff';x.font='11px monospace';x.fillText('Press R to restart',c.width/2,c.height/2+12);}}function tick(){if(paused||over)return;if(vld(piece.s,piece.x,piece.y+1)){piece.y++;}else{lock();}draw();}function init(){mkB();score=0;lines=0;level=1;over=false;paused=false;document.getElementById('ts').textContent='0';document.getElementById('tl').textContent='0';document.getElementById('tlv').textContent='1';document.getElementById('tst').textContent='';nxt=mkP();piece=mkP();if(tmr)clearInterval(tmr);tmr=setInterval(tick,800);draw();}c.addEventListener('click',function(){if(!started){started=true;init();}});document.addEventListener('keydown',function(e){if(!started)return;if(over){if(e.key==='r'||e.key==='R'){init();}return;}if(e.key==='p'||e.key==='P'){paused=!paused;document.getElementById('tst').textContent=paused?'PAUSED':'';draw();return;}if(paused)return;if(e.key==='ArrowLeft'){e.preventDefault();if(vld(piece.s,piece.x-1,piece.y))piece.x--;}else if(e.key==='ArrowRight'){e.preventDefault();if(vld(piece.s,piece.x+1,piece.y))piece.x++;}else if(e.key==='ArrowDown'){e.preventDefault();if(vld(piece.s,piece.x,piece.y+1))piece.y++;else lock();}else if(e.key==='ArrowUp'){e.preventDefault();var r=rot(piece.s);if(vld(r,piece.x,piece.y))piece.s=r;}else if(e.key===' '){e.preventDefault();while(vld(piece.s,piece.x,piece.y+1))piece.y++;lock();}draw();});x.fillStyle='#030810';x.fillRect(0,0,c.width,c.height);x.fillStyle='#00d4ff';x.font='bold 14px monospace';x.textAlign='center';x.shadowColor='#00d4ff';x.shadowBlur=10;x.fillText('CLICK TO START',c.width/2,c.height/2-8);x.shadowBlur=0;x.fillStyle='#4a9eff';x.font='10px monospace';x.fillText('then use keyboard',c.width/2,c.height/2+12);}());</script>"
+      }
+    },
+    {
+      "id": 7,
+      "title": "💰 記帳軟體",
+      "type": "text",
+      "gridPos": { "x": 9, "y": 23, "w": 15, "h": 22 },
+      "options": {
+        "mode": "html",
+        "content": "<div style='background:#050d1a;border:1px solid #1a3a5c;border-radius:8px;padding:14px;font-family:monospace;color:#00d4ff'><div style='text-align:center;font-size:15px;letter-spacing:3px;text-shadow:0 0 10px #00d4ff;margin-bottom:12px;border-bottom:1px solid #1a3a5c;padding-bottom:8px'>💰 EXPENSE TRACKER</div><div style='display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center'><input id='ea' type='number' placeholder='金額 NT$' min='0' style='width:90px;background:#060f1e;border:1px solid #1e3a5f;color:#00d4ff;padding:5px 8px;border-radius:4px;font-family:monospace;outline:none'><select id='ec' style='background:#060f1e;border:1px solid #1e3a5f;color:#00d4ff;padding:5px 8px;border-radius:4px;font-family:monospace;outline:none'><option value='食物'>食物</option><option value='交通'>交通</option><option value='購物'>購物</option><option value='娛樂'>娛樂</option><option value='餐廳'>餐廳</option><option value='其他'>其他</option></select><input id='ed' type='text' placeholder='說明（選填）' style='flex:1;min-width:80px;background:#060f1e;border:1px solid #1e3a5f;color:#00d4ff;padding:5px 8px;border-radius:4px;font-family:monospace;outline:none'><button onclick='addE()' style='background:#00d4ff18;border:1px solid #00d4ff;color:#00d4ff;padding:5px 14px;border-radius:4px;font-family:monospace;cursor:pointer'>+ 新增</button></div><div style='background:#060f1e;border:1px solid #1e3a5f;border-radius:6px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center'><span style='color:#4a9eff;font-size:10px;letter-spacing:2px'>累計支出</span><span style='font-size:22px;color:#00ff88;text-shadow:0 0 8px #00ff88'>NT$ <span id='et'>0</span></span></div><div id='ecat' style='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px'></div><div id='el' style='max-height:260px;overflow-y:auto;border:1px solid #0d1f36;border-radius:6px'></div></div><script>(function(){var KEY='gf_exp_v1',exps=JSON.parse(localStorage.getItem(KEY)||'[]');function save(){localStorage.setItem(KEY,JSON.stringify(exps));}function addE(){var a=parseFloat(document.getElementById('ea').value),c=document.getElementById('ec').value,d=document.getElementById('ed').value||'';if(!a||a<=0)return;exps.unshift({id:Date.now(),a:a,c:c,d:d,t:new Date().toLocaleDateString('zh-TW')});save();render();document.getElementById('ea').value='';document.getElementById('ed').value='';}function delE(id){exps=exps.filter(function(e){return e.id!==id;});save();render();}function render(){var total=exps.reduce(function(s,e){return s+e.a;},0);document.getElementById('et').textContent=total.toFixed(0);var html='';exps.forEach(function(e){html+=\"<div style='display:flex;align-items:center;padding:7px 10px;border-bottom:1px solid #0d1f36;font-size:12px'><span style='color:#4a9eff;min-width:72px'>\"+e.t+\"</span><span style='flex:1;margin:0 8px'>\"+e.c+(e.d?\" [\"+e.d+\"]\":\"\")+\"</span><span style='color:#00ff88;min-width:64px;text-align:right'>NT$\"+e.a.toFixed(0)+\"</span><button onclick='delE(\"+e.id+\")' style='background:none;border:none;color:#ff4444;cursor:pointer;margin-left:8px;font-size:16px'>x</button></div>\";});document.getElementById('el').innerHTML=html||\"<div style='text-align:center;color:#1a3a5c;padding:24px;font-size:12px'>尚無記錄，新增第一筆吧！</div>\";var cats={};exps.forEach(function(e){cats[e.c]=(cats[e.c]||0)+e.a;});var ch='';Object.keys(cats).forEach(function(k){ch+=\"<div style='background:#060f1e;border:1px solid #1e3a5f;border-radius:4px;padding:4px 10px;font-size:10px;text-align:center'><div style='color:#4a9eff;margin-bottom:2px'>\"+k+\"</div><div style='color:#f5a623'>NT$\"+cats[k].toFixed(0)+\"</div></div>\";});document.getElementById('ecat').innerHTML=ch;}window.addE=addE;window.delE=delE;render();}());</script>"
+      }
+    },
+    {
+      "id": 8,
+      "title": "📅 日曆與備註",
+      "type": "text",
+      "gridPos": { "x": 0, "y": 45, "w": 24, "h": 18 },
+      "options": {
+        "mode": "html",
+        "content": "<div style='background:#050d1a;border:1px solid #1a3a5c;border-radius:8px;padding:14px;font-family:monospace;color:#00d4ff;display:flex;gap:14px'><div style='flex:1'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px'><button id='cal_prev' style='background:#060f1e;border:1px solid #1e3a5f;color:#00d4ff;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:monospace'>◀</button><div id='cal_hd' style='font-size:15px;letter-spacing:3px;text-shadow:0 0 10px #00d4ff'></div><button id='cal_next' style='background:#060f1e;border:1px solid #1e3a5f;color:#00d4ff;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:monospace'>▶</button></div><div style='display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;text-align:center;font-size:10px;color:#4a9eff'><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div><div id='cal_grid' style='display:grid;grid-template-columns:repeat(7,1fr);gap:2px'></div></div><div style='min-width:200px;background:#060f1e;border:1px solid #1e3a5f;border-radius:6px;padding:12px'><div id='cal_sel' style='font-size:11px;color:#4a9eff;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid #1a3a5c;padding-bottom:6px'>📅 點選日期新增備註</div><div style='display:flex;gap:6px;margin-bottom:8px'><input id='cal_ni' type='text' placeholder='新增備註...' style='flex:1;background:#050d1a;border:1px solid #1e3a5f;color:#00d4ff;padding:5px 8px;border-radius:4px;font-family:monospace;outline:none'><button id='cal_save' style='background:#00d4ff18;border:1px solid #00d4ff;color:#00d4ff;padding:5px 10px;border-radius:4px;font-family:monospace;cursor:pointer'>儲存</button></div><div id='cal_notes'></div></div></div><script>(function(){var D=new Date(),sel=null,notes=JSON.parse(localStorage.getItem('gf_cal_v1')||'{}');function save(){localStorage.setItem('gf_cal_v1',JSON.stringify(notes));}function isToday(y,m,day){var td=new Date();return td.getFullYear()===y&&td.getMonth()===m&&td.getDate()===day;}function render(){var y=D.getFullYear(),m=D.getMonth();document.getElementById('cal_hd').textContent=y+' 年 '+(m+1)+' 月';var grid=document.getElementById('cal_grid');grid.innerHTML='';var fd=new Date(y,m,1).getDay(),dm=new Date(y,m+1,0).getDate();for(var i=0;i<fd;i++)grid.appendChild(document.createElement('div'));for(var day=1;day<=dm;day++){var k=y+'-'+(m+1)+'-'+day;var td=isToday(y,m,day),isSel=sel===k;var el=document.createElement('div');el.setAttribute('data-k',k);el.style.background=isSel?'#00d4ff33':td?'#00ff8818':'#060f1e';el.style.border='1px solid '+(isSel?'#00d4ff':td?'#00ff88':'#1e3a5f');el.style.borderRadius='4px';el.style.padding='5px 2px';el.style.textAlign='center';el.style.cursor='pointer';el.style.color=td?'#00ff88':'#e0e0e0';el.style.fontSize='12px';el.style.position='relative';el.textContent=day;if(notes[k]&&notes[k].length){var dot=document.createElement('span');dot.style.cssText='position:absolute;top:1px;right:2px;color:#f5a623;font-size:7px';dot.textContent='●';el.appendChild(dot);}grid.appendChild(el);}renderNotes();}function renderNotes(){var list=document.getElementById('cal_notes');list.innerHTML='';if(!sel){document.getElementById('cal_sel').textContent='點選日期新增備註';return;}var parts=sel.split('-');document.getElementById('cal_sel').textContent=parts[0]+' 年 '+parts[1]+' 月 '+parts[2]+' 日';var ns=notes[sel]||[];if(!ns.length){var empty=document.createElement('div');empty.style.cssText='color:#1a3a5c;font-size:11px;padding:4px 0';empty.textContent='尚無備註';list.appendChild(empty);return;}ns.forEach(function(n,i){var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #0d1f36;font-size:11px;gap:8px';var txt=document.createElement('span');txt.style.color='#e0e0e0';txt.textContent=n;var del=document.createElement('span');del.setAttribute('data-i',i);del.style.cssText='color:#ff4444;cursor:pointer;font-size:14px;flex-shrink:0';del.textContent='x';row.appendChild(txt);row.appendChild(del);list.appendChild(row);});}document.getElementById('cal_grid').addEventListener('click',function(e){var el=e.target.closest('[data-k]');if(el){sel=el.getAttribute('data-k');render();}});document.getElementById('cal_notes').addEventListener('click',function(e){var el=e.target.closest('[data-i]');if(el&&sel&&notes[sel]){notes[sel].splice(parseInt(el.getAttribute('data-i')),1);if(!notes[sel].length)delete notes[sel];save();render();}});document.getElementById('cal_save').addEventListener('click',function(){if(!sel)return;var v=document.getElementById('cal_ni').value.trim();if(!v)return;if(!notes[sel])notes[sel]=[];notes[sel].push(v);save();document.getElementById('cal_ni').value='';render();});document.getElementById('cal_ni').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('cal_save').click();});document.getElementById('cal_prev').addEventListener('click',function(){D.setMonth(D.getMonth()-1);render();});document.getElementById('cal_next').addEventListener('click',function(){D.setMonth(D.getMonth()+1);render();});render();}());</script>"
+      }
+    },
+    {
+      "id": 9,
+      "title": "🦕 Dino Runner",
+      "type": "text",
+      "gridPos": { "x": 0, "y": 63, "w": 24, "h": 10 },
+      "options": {
+        "mode": "html",
+        "content": "<div style='background:#050d1a;border:1px solid #1a3a5c;border-radius:8px;padding:12px;font-family:monospace'><div style='text-align:center;color:#4a9eff;font-size:10px;letter-spacing:3px;margin-bottom:6px'>🦕 DINO RUNNER — CLICK OR SPACE TO START</div><canvas id='dino_c' width='700' height='160' style='background:#030810;border:1px solid #1e3a5f;display:block;margin:0 auto;cursor:pointer;max-width:100%'></canvas></div><script>(function(){var c=document.getElementById('dino_c'),ctx=c.getContext('2d'),W=c.width,H=c.height,GY=H-28,state='idle',sc=0,fr=0,spd=5,ot=0,oi=80,hi=parseInt(localStorage.getItem('dino_hi')||'0'),dino={x:60,y:GY,vy:0,j:false,lf:0},obs=[],clds=[];function jump(){if(!dino.j&&state==='running'){dino.vy=-14;dino.j=true;}}function drawD(){var x=dino.x,y=dino.y,col=state==='dead'?'#ff4444':'#00d4ff';ctx.fillStyle=col;ctx.fillRect(x+18,y-54,20,14);ctx.fillRect(x+30,y-44,10,6);ctx.fillStyle='#030810';ctx.fillRect(x+32,y-52,4,4);ctx.fillStyle=col;ctx.fillRect(x+10,y-42,26,10);ctx.fillRect(x+6,y-34,24,16);ctx.fillRect(x,y-34,8,8);ctx.fillRect(x+2,y-42,8,10);var l1=dino.lf<5;if(dino.j){ctx.fillRect(x+10,y-18,10,18);ctx.fillRect(x+20,y-18,10,14);}else{ctx.fillRect(x+10,y-18,10,l1?18:10);ctx.fillRect(x+20,y-18,10,l1?10:18);}}function drawO(o){ctx.fillStyle='#00ff88';ctx.fillRect(o.x+o.w/2-5,GY-o.h,10,o.h);ctx.fillRect(o.x,GY-o.h*0.6,o.w/2-5,8);ctx.fillRect(o.x,GY-o.h*0.8,8,o.h*0.22);if(o.big){ctx.fillRect(o.x+o.w/2+5,GY-o.h*0.6,o.w/2-5,8);ctx.fillRect(o.x+o.w-8,GY-o.h*0.8,8,o.h*0.22);}}function hit(o){var dm=6;return dino.x+36-dm>o.x+dm&&dino.x+10+dm<o.x+o.w-dm&&dino.y>GY-o.h+dm;}function update(){if(state!=='running')return;fr++;sc=Math.floor(fr/6);spd=5+Math.floor(sc/150)*0.5;dino.vy+=0.7;dino.y+=dino.vy;if(dino.y>=GY){dino.y=GY;dino.vy=0;dino.j=false;}if(!dino.j)dino.lf=Math.floor(fr/5)%10;ot++;if(ot>=oi){obs.push({x:W+10,w:Math.random()>0.5?50:30,h:50+Math.random()*30,big:Math.random()>0.5});ot=0;oi=50+Math.floor(Math.random()*55);}obs.forEach(function(o){o.x-=spd;});obs=obs.filter(function(o){return o.x>-60;});for(var i=0;i<obs.length;i++){if(hit(obs[i])){state='dead';if(sc>hi){hi=sc;localStorage.setItem('dino_hi',String(hi));}break;}}if(fr%90===0)clds.push({x:W,y:15+Math.random()*40,w:50+Math.random()*40});clds.forEach(function(cl){cl.x-=spd*0.2;});clds=clds.filter(function(cl){return cl.x>-100;});}function draw(){ctx.fillStyle='#030810';ctx.fillRect(0,0,W,H);ctx.fillStyle='#1e3a5f';ctx.fillRect(0,GY+2,W,2);var dx=Math.floor(fr*spd)%24;for(var gx=dx-24;gx<W;gx+=24){ctx.fillStyle='#0d1f36';ctx.fillRect(gx,GY+6,14,2);}ctx.fillStyle='#0a1628';clds.forEach(function(cl){ctx.fillRect(cl.x,cl.y,cl.w,8);ctx.fillRect(cl.x+8,cl.y-6,cl.w-16,6);});obs.forEach(drawO);drawD();ctx.font='11px monospace';ctx.textAlign='right';ctx.fillStyle='#4a9eff';ctx.fillText('HI '+String(hi).padStart(5,'0'),W-90,18);ctx.fillStyle='#00d4ff';ctx.fillText(String(sc).padStart(5,'0'),W-10,18);if(state==='idle'){ctx.fillStyle='#00d4ff';ctx.font='bold 13px monospace';ctx.textAlign='center';ctx.shadowColor='#00d4ff';ctx.shadowBlur=12;ctx.fillText('PRESS SPACE OR CLICK TO START',W/2,H/2);ctx.shadowBlur=0;ctx.fillStyle='#4a9eff';ctx.font='10px monospace';ctx.fillText('SPACE / UP Arrow to jump',W/2,H/2+18);}else if(state==='dead'){ctx.fillStyle='#ff4444';ctx.font='bold 14px monospace';ctx.textAlign='center';ctx.fillText('GAME OVER',W/2,H/2-8);ctx.fillStyle='#4a9eff';ctx.font='10px monospace';ctx.fillText('SPACE / CLICK to restart',W/2,H/2+12);}}function start(){if(state==='dead'){dino.y=GY;dino.vy=0;dino.j=false;dino.lf=0;obs=[];clds=[];fr=0;sc=0;ot=0;oi=80;spd=5;}state='running';}function loop(){update();draw();requestAnimationFrame(loop);}document.addEventListener('keydown',function(e){if(e.code==='Space'||e.key==='ArrowUp'){e.preventDefault();if(state!=='running')start();else jump();}});c.addEventListener('click',function(){if(state!=='running')start();else jump();});loop();}());</script>"
+      }
+    }
+  ],
+  "templating": {
+    "list": [{
+      "name": "datasource",
+      "type": "datasource",
+      "query": "prometheus",
+      "hide": 0,
+      "label": "資料源"
+    }]
+  },
+  "schemaVersion": 38
+}

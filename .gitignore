@@ -13,3 +13,6 @@ Thumbs.db
 # 編輯器設定
 .vscode/
 .idea/
+
+# Claude Code
+.claude/
