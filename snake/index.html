@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>監控戰情室</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111217;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+    color: #e0e0e0;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1rem;
+    color: #f46800;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 0.75rem;
+    color: #444;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    width: 100%;
+    max-width: 640px;
+  }
+  a.card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 8px;
+    padding: 20px;
+    text-decoration: none;
+    transition: border-color 0.15s;
+  }
+  a.card:hover { border-color: #f46800; }
+  a.card:hover .arrow { color: #f46800; }
+  .icon { font-size: 1.5rem; }
+  .card-title { font-size: 0.92rem; color: #e0e0e0; font-weight: 600; }
+  .card-desc  { font-size: 0.75rem; color: #555; line-height: 1.4; }
+  .arrow { font-size: 0.75rem; color: #333; margin-top: 4px; }
+  .ext { font-size: 0.65rem; color: #333; margin-top: 2px; }
+</style>
+</head>
+<body>
+  <h1>監控戰情室</h1>
+  <p class="subtitle">Linux Project · Dashboard Portal</p>
+
+  <div class="grid">
+    <a class="card" href="/snake.html">
+      <span class="icon">🐍</span>
+      <span class="card-title">貪吃蛇</span>
+      <span class="card-desc">玩遊戲，分數自動存入排行榜</span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="card" href="/report.html">
+      <span class="icon">🐛</span>
+      <span class="card-title">回報問題</span>
+      <span class="card-desc">發現 bug？填寫後直接通知管理員</span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="card" href="http://localhost:3000" target="_blank">
+      <span class="icon">📊</span>
+      <span class="card-title">Grafana</span>
+      <span class="card-desc">系統監控儀表板、遊戲數據圖表</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+
+    <a class="card" href="http://localhost:9090" target="_blank">
+      <span class="icon">🔍</span>
+      <span class="card-title">Prometheus</span>
+      <span class="card-desc">原始指標查詢介面</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+
+    <a class="card" href="http://localhost:9093" target="_blank">
+      <span class="icon">🔔</span>
+      <span class="card-title">Alertmanager</span>
+      <span class="card-desc">告警狀態與通知管理</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+  </div>
+</body>
+</html>

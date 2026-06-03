@@ -33,6 +33,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - monitoring
     depends_on:
@@ -106,6 +107,7 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  snake_data:
 
 networks:
   monitoring:

@@ -115,16 +115,18 @@ docker ps
 ### 4-2. 進入專案資料夾
 
 ```powershell
-cd C:\Users\phoeb\Documents\monitoring-stack
+cd 你的專案路徑\Linux_project
 ```
 
-### 4-3. 一鍵啟動所有服務
+### 4-3. 一鍵安裝（建議）
+
+執行安裝腳本，它會自動建立設定檔並啟動所有服務：
 
 ```powershell
-docker-compose up -d
+.\setup.ps1
 ```
 
-第一次執行會花 2~5 分鐘下載映像檔（網速依賴）。
+腳本會引導你輸入 Telegram Bot Token 與 Chat ID（可以先跳過，之後再填）。
 
 > ⚠️ **重要：下載期間請勿用滑鼠點擊 PowerShell 視窗內部**，否則會進入「選取模式」導致下載暫停。若標題列出現「**選取** Windows PowerShell」，按 `Enter` 或 `Esc` 即可恢復。
 
@@ -189,8 +191,9 @@ alertmanager    Up        0.0.0.0:9093->9093/tcp
 | Dashboard ID | 用途 | 說明 |
 |--------------|------|------|
 | **1860** | Node Exporter Full | 最完整的主機監控（30+ 個圖表） |
-| **193** | Docker Monitoring | 監控 Docker 容器 |
 | **893** | Docker and Host Monitoring | 主機 + Docker 綜合面板 |
+
+> ⚠️ Dashboard 193 與新版 cAdvisor 不相容，匯入後會全部顯示 N/A，請勿使用。
 
 ### 匯入步驟
 
@@ -257,10 +260,14 @@ docker-compose restart alertmanager
 在新的 PowerShell 視窗執行：
 
 ```powershell
-docker run --rm -it --name stress polinux/stress stress --cpu 4 --timeout 60s
+docker run --rm -it --name stress polinux/stress stress --cpu 8 --timeout 120s
 ```
 
-此指令會啟動一個容器，瞬間把 4 個 CPU 核心壓滿，持續 60 秒。
+此指令會啟動一個容器，持續壓滿 CPU 120 秒。
+
+> **注意：** `--cpu` 後面的數字要大於等於你電腦的 CPU 核心數，才能讓使用率突破 80% 的告警門檻。
+> 查看你的核心數：工作管理員 → 效能 → CPU → 邏輯處理器數量。
+> 例如 16 核心的電腦就下 `--cpu 16`。
 
 ### 9-3. 觀察戰情室反應
 

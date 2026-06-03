@@ -1,0 +1,86 @@
+{
+  "uid": "snake-analytics-001",
+  "title": "🐍 貪吃蛇分析",
+  "tags": ["game", "analytics"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "總遊戲次數",
+      "gridPos": {"x":0,"y":0,"w":6,"h":4},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "orange"}, "unit": "short"}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "snake_games_total", "legendFormat": "次數"}]
+    },
+    {
+      "id": 2, "type": "stat", "title": "歷史最高分",
+      "gridPos": {"x":6,"y":0,"w":6,"h":4},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "red"}, "unit": "short"}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "snake_high_score", "legendFormat": "最高分"}]
+    },
+    {
+      "id": 3, "type": "stat", "title": "全體平均分",
+      "gridPos": {"x":12,"y":0,"w":6,"h":4},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "blue"}, "unit": "short", "decimals": 1}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "snake_avg_score", "legendFormat": "平均分"}]
+    },
+    {
+      "id": 4, "type": "stat", "title": "活躍玩家數",
+      "gridPos": {"x":18,"y":0,"w":6,"h":4},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}, "unit": "short"}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "count(snake_user_best_score)", "legendFormat": "人數"}]
+    },
+    {
+      "id": 5, "type": "bargauge", "title": "各玩家最高分",
+      "gridPos": {"x":0,"y":4,"w":12,"h":8},
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true
+      },
+      "fieldConfig": {"defaults": {"color": {"mode": "continuous-BlYlRd"}, "unit": "short"}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "snake_user_best_score", "legendFormat": "{{name}}"}]
+    },
+    {
+      "id": 6, "type": "bargauge", "title": "各玩家遊戲次數",
+      "gridPos": {"x":12,"y":4,"w":12,"h":8},
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true
+      },
+      "fieldConfig": {"defaults": {"color": {"mode": "continuous-GrYlRd"}, "unit": "short"}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "snake_user_games_total", "legendFormat": "{{name}}"}]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "各玩家最高分趨勢",
+      "gridPos": {"x":0,"y":12,"w":24,"h":8},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "snake_user_best_score", "legendFormat": "{{name}}"}]
+    },
+    {
+      "id": 8, "type": "bargauge", "title": "各玩家平均分",
+      "gridPos": {"x":0,"y":20,"w":12,"h":6},
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "orientation": "horizontal",
+        "displayMode": "basic"
+      },
+      "fieldConfig": {"defaults": {"color": {"mode": "continuous-blues"}, "unit": "short", "decimals": 1}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "snake_user_avg_score", "legendFormat": "{{name}}"}]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "遊戲次數趨勢（全體）",
+      "gridPos": {"x":12,"y":20,"w":12,"h":6},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "orange"}, "unit": "short"}},
+      "targets": [{"datasource": {"type": "prometheus"}, "expr": "increase(snake_games_total[1m])", "legendFormat": "每分鐘遊戲次數"}]
+    }
+  ]
+}

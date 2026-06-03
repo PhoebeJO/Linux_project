@@ -1,0 +1,23 @@
+{
+  "id": null,
+  "uid": "snake-game-001",
+  "title": "🐍 貪吃蛇",
+  "tags": ["game"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "",
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 24 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src=\"http://localhost:8888\" width=\"100%\" height=\"520px\" frameborder=\"0\" style=\"border-radius:4px;\"></iframe>"
+      },
+      "transparent": true
+    }
+  ]
+}
