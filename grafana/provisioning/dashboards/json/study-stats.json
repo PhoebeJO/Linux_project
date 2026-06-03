@@ -1,0 +1,145 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "🍅 今日番茄鐘",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "pomodoro_today_count", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 2 },
+              { "color": "yellow", "value": 4 },
+              { "color": "green", "value": 6 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 2,
+      "title": "⏱️ 今日學習時間",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "pomodoro_today_minutes", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 50 },
+              { "color": "yellow", "value": 100 },
+              { "color": "green", "value": 150 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 3,
+      "title": "📅 本週累計番茄鐘",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "pomodoro_week_total", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 10 },
+              { "color": "green", "value": 20 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 4,
+      "title": "📋 說明",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "### 🎯 目標建議\n\n| 等級 | 每日番茄 |\n|------|----------|\n| 🔴 剛開始 | 1~2 個 |\n| 🟡 養成習慣 | 4~6 個 |\n| 🟢 高效學習 | 6+ 個 |\n\n每個番茄 = 25 分鐘專注\n\n**去[番茄鐘](http://localhost:8001)開始學習！**"
+      }
+    },
+    {
+      "id": 5,
+      "title": "📈 今日番茄鐘趨勢",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "pomodoro_today_count",
+          "legendFormat": "完成數",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "pointSize": 6, "showPoints": "always" },
+          "color": { "mode": "fixed", "fixedColor": "#ff6384" }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "⏱️ 今日學習分鐘趨勢",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "pomodoro_today_minutes",
+          "legendFormat": "學習分鐘",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "pointSize": 6, "showPoints": "always" },
+          "color": { "mode": "fixed", "fixedColor": "#36a2eb" }
+        }
+      }
+    }
+  ],
+  "title": "📊 學習時間統計",
+  "uid": "study-stats",
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser"
+}

@@ -1,6 +1,6 @@
 # 包含 Telegram Bot Token，絕對不能上傳
 alertmanager/alertmanager.yml
-.env
+student_tools/.env
 
 # Docker 產生的本地資料（其實 docker-compose 用的是 named volume，不會在資料夾裡，但保險起見）
 grafana_data/

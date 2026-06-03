@@ -10,6 +10,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+      - ./prometheus/student_alert.rules.yml:/etc/prometheus/student_alert.rules.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -74,30 +75,21 @@ services:
     devices:
       - /dev/kmsg
 
-  snake:
-    image: nginx:alpine
-    container_name: snake
+  student-exporter:
+    build: ./student_tools
+    container_name: student-exporter
     restart: unless-stopped
     ports:
-      - "8888:80"
-    volumes:
-      - ./snake:/usr/share/nginx/html:ro
-    networks:
-      - monitoring
-    depends_on:
-      - snake-backend
-
-  snake-backend:
-    build: ./backend
-    container_name: snake-backend
-    restart: unless-stopped
-    ports:
-      - "5000:5000"
-    volumes:
-      - snake_data:/data
+      - "8001:8001"
     environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - TZ=Asia/Taipei
+    env_file:
+      - ./student_tools/.env
+    volumes:
+      - ./student_tools/deadlines.yml:/app/deadlines.yml
+      - ./student_tools/settings.yml:/app/settings.yml
+      - ./student_tools/stocks.yml:/app/stocks.yml
+      - ./student_tools/study_log.json:/app/study_log.json
     networks:
       - monitoring
 

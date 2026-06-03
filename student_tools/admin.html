@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 作業管理 & 設定</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 30px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 2em; margin-bottom: 5px; }
+        .subtitle { opacity: 0.6; margin-bottom: 30px; font-size: 0.95em; }
+
+        /* 新增表單 */
+        .add-form {
+            background: rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .add-form h2 { font-size: 1.3em; margin-bottom: 15px; }
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 150px;
+        }
+        .form-group label {
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+        .form-group input {
+            padding: 10px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+            transition: border 0.3s;
+        }
+        .form-group input:focus {
+            border-color: #667eea;
+        }
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: scale(1.03); }
+        .btn-add { background: #2ecc71; color: #fff; height: 42px; }
+        .btn-add:hover { background: #27ae60; }
+        .btn-save { background: #3498db; color: #fff; }
+        .btn-save:hover { background: #2980b9; }
+        .btn-delete { background: #e74c3c; color: #fff; padding: 8px 16px; font-size: 0.9em; }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-cancel { background: rgba(255,255,255,0.15); color: #fff; padding: 8px 16px; font-size: 0.9em; }
+
+        /* 作業列表 */
+        .deadline-list { display: flex; flex-direction: column; gap: 12px; }
+        .deadline-card {
+            background: rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #2ecc71;
+            transition: all 0.3s;
+        }
+        .deadline-card:hover { background: rgba(255,255,255,0.1); }
+        .deadline-card.urgent { border-left-color: #e74c3c; }
+        .deadline-card.warning { border-left-color: #f39c12; }
+        .deadline-card.safe { border-left-color: #2ecc71; }
+
+        .card-info { flex: 1; }
+        .card-name { font-size: 1.2em; font-weight: bold; margin-bottom: 4px; }
+        .card-course { font-size: 0.9em; opacity: 0.6; }
+        .card-deadline { font-size: 0.9em; opacity: 0.8; margin-top: 4px; }
+
+        .card-remaining {
+            text-align: right;
+            margin: 0 25px;
+        }
+        .card-hours {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        .card-unit { font-size: 0.85em; opacity: 0.6; }
+
+        .card-actions { display: flex; gap: 8px; }
+
+        /* 編輯模式 */
+        .edit-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            width: 100%;
+        }
+        .edit-row input {
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.95em;
+            outline: none;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: bold;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s;
+            z-index: 999;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #2ecc71; }
+        .toast.error { background: #e74c3c; }
+
+        .nav-links {
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .nav-links a:hover { text-decoration: underline; }
+
+        .empty-msg {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.4;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/">🍅 番茄鐘</a>
+            <a href="/admin">📚 作業管理</a>
+        </div>
+
+        <h1>📚 作業截止日期管理</h1>
+        <p class="subtitle">新增、修改、刪除作業，儲存後 Prometheus 會自動更新告警</p>
+
+        <!-- 新增表單 -->
+        <div class="add-form">
+            <h2>➕ 新增作業</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>作業名稱</label>
+                    <input type="text" id="newName" placeholder="例：Linux 期末報告">
+                </div>
+                <div class="form-group">
+                    <label>科目</label>
+                    <input type="text" id="newCourse" placeholder="例：Linux">
+                </div>
+                <div class="form-group">
+                    <label>截止日期</label>
+                    <input type="datetime-local" id="newDeadline">
+                </div>
+                <button class="btn btn-add" onclick="addDeadline()">新增</button>
+            </div>
+        </div>
+
+        <!-- 作業列表 -->
+        <div class="deadline-list" id="deadlineList">
+            <div class="empty-msg">載入中...</div>
+        </div>
+
+        <!-- 深夜提醒設定 -->
+        <div class="add-form" style="margin-top: 40px; border-left: 4px solid #9b59b6;">
+            <h2>🌙 深夜使用提醒設定</h2>
+            <p style="opacity:0.6; margin-bottom:15px; font-size:0.9em;">
+                設定幾點到幾點之間會透過 Telegram 發送「該去睡覺了」的提醒
+            </p>
+            <div class="form-row">
+                <div class="form-group" style="min-width:100px; flex:0.5;">
+                    <label>開始時間</label>
+                    <select id="startHour" style="padding:10px 14px; border:1px solid rgba(255,255,255,0.15); border-radius:10px; background:rgba(255,255,255,0.08); color:#fff; font-size:1em; outline:none;">
+                    </select>
+                </div>
+                <div style="display:flex; align-items:flex-end; padding-bottom:10px; font-size:1.3em; opacity:0.5;">→</div>
+                <div class="form-group" style="min-width:100px; flex:0.5;">
+                    <label>結束時間</label>
+                    <select id="endHour" style="padding:10px 14px; border:1px solid rgba(255,255,255,0.15); border-radius:10px; background:rgba(255,255,255,0.08); color:#fff; font-size:1em; outline:none;">
+                    </select>
+                </div>
+                <div class="form-group" style="flex:2;">
+                    <label>提醒訊息</label>
+                    <input type="text" id="lateMsg" placeholder="例：該去睡覺了！">
+                </div>
+                <button class="btn btn-add" onclick="saveSettings()" style="background:#9b59b6;">💾 儲存設定</button>
+            </div>
+            <div id="lateNightStatus" style="margin-top: 15px; padding: 12px 18px; border-radius: 10px; font-size: 0.95em;"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let deadlines = [];
+
+        async function loadDeadlines() {
+            try {
+                const resp = await fetch('/api/deadlines');
+                deadlines = await resp.json();
+                renderList();
+            } catch (e) {
+                showToast('載入失敗：' + e.message, 'error');
+            }
+        }
+
+        function getUrgencyClass(hours) {
+            if (hours <= 24) return 'urgent';
+            if (hours <= 72) return 'warning';
+            return 'safe';
+        }
+
+        function formatRemaining(hours) {
+            if (hours <= 0) return { value: '已過期', unit: '' };
+            if (hours < 24) return { value: hours.toFixed(1), unit: '小時' };
+            if (hours < 168) return { value: (hours / 24).toFixed(1), unit: '天' };
+            return { value: (hours / 168).toFixed(1), unit: '週' };
+        }
+
+        function renderList() {
+            const list = document.getElementById('deadlineList');
+            if (deadlines.length === 0) {
+                list.innerHTML = '<div class="empty-msg">尚無作業，點擊上方「新增」開始！</div>';
+                return;
+            }
+
+            // 按剩餘時間排序
+            deadlines.sort((a, b) => a.hours_remaining - b.hours_remaining);
+
+            list.innerHTML = deadlines.map((d, i) => {
+                const rem = formatRemaining(d.hours_remaining);
+                const urgency = getUrgencyClass(d.hours_remaining);
+                return `
+                    <div class="deadline-card ${urgency}" id="card-${i}">
+                        <div class="card-info">
+                            <div class="card-name">${escHtml(d.name)}</div>
+                            <div class="card-course">📖 ${escHtml(d.course)}</div>
+                            <div class="card-deadline">📅 ${escHtml(d.deadline)}</div>
+                        </div>
+                        <div class="card-remaining">
+                            <div class="card-hours">${rem.value}</div>
+                            <div class="card-unit">${rem.unit}</div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-save" onclick="editDeadline(${i})">✏️ 編輯</button>
+                            <button class="btn btn-delete" onclick="deleteDeadline(${i})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        async function addDeadline() {
+            const name = document.getElementById('newName').value.trim();
+            const course = document.getElementById('newCourse').value.trim();
+            const deadlineInput = document.getElementById('newDeadline').value;
+
+            if (!name || !course || !deadlineInput) {
+                showToast('請填寫所有欄位', 'error');
+                return;
+            }
+
+            const deadline = deadlineInput.replace('T', ' ') + ':00';
+
+            try {
+                const resp = await fetch('/api/deadlines', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, course, deadline })
+                });
+                const result = await resp.json();
+                if (result.ok) {
+                    showToast('✅ 新增成功！', 'success');
+                    document.getElementById('newName').value = '';
+                    document.getElementById('newCourse').value = '';
+                    document.getElementById('newDeadline').value = '';
+                    await loadDeadlines();
+                } else {
+                    showToast('新增失敗：' + (result.error || ''), 'error');
+                }
+            } catch (e) {
+                showToast('新增失敗：' + e.message, 'error');
+            }
+        }
+
+        function editDeadline(index) {
+            const d = deadlines[index];
+            const card = document.getElementById(`card-${index}`);
+            const dlValue = d.deadline.replace(' ', 'T').substring(0, 16);
+
+            card.innerHTML = `
+                <div class="edit-row">
+                    <input type="text" id="editName-${index}" value="${escHtml(d.name)}" placeholder="作業名稱">
+                    <input type="text" id="editCourse-${index}" value="${escHtml(d.course)}" placeholder="科目">
+                    <input type="datetime-local" id="editDeadline-${index}" value="${dlValue}">
+                    <button class="btn btn-save" onclick="saveEdit(${index})">💾 儲存</button>
+                    <button class="btn btn-cancel" onclick="renderList()">取消</button>
+                </div>
+            `;
+        }
+
+        async function saveEdit(index) {
+            const name = document.getElementById(`editName-${index}`).value.trim();
+            const course = document.getElementById(`editCourse-${index}`).value.trim();
+            const deadlineInput = document.getElementById(`editDeadline-${index}`).value;
+
+            if (!name || !course || !deadlineInput) {
+                showToast('請填寫所有欄位', 'error');
+                return;
+            }
+
+            const deadline = deadlineInput.replace('T', ' ') + ':00';
+
+            try {
+                const resp = await fetch(`/api/deadlines/${index}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, course, deadline })
+                });
+                const result = await resp.json();
+                if (result.ok) {
+                    showToast('✅ 修改成功！', 'success');
+                    await loadDeadlines();
+                } else {
+                    showToast('修改失敗', 'error');
+                }
+            } catch (e) {
+                showToast('修改失敗：' + e.message, 'error');
+            }
+        }
+
+        async function deleteDeadline(index) {
+            const d = deadlines[index];
+            if (!confirm(`確定刪除「${d.name}」嗎？`)) return;
+
+            try {
+                const resp = await fetch(`/api/deadlines/${index}`, {
+                    method: 'DELETE'
+                });
+                const result = await resp.json();
+                if (result.ok) {
+                    showToast('🗑️ 已刪除', 'success');
+                    await loadDeadlines();
+                } else {
+                    showToast('刪除失敗', 'error');
+                }
+            } catch (e) {
+                showToast('刪除失敗：' + e.message, 'error');
+            }
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.className = 'toast', 3000);
+        }
+
+        // ── 深夜提醒設定 ──
+
+        function initHourSelects() {
+            const startSel = document.getElementById('startHour');
+            const endSel = document.getElementById('endHour');
+            for (let h = 0; h < 24; h++) {
+                const label = h.toString().padStart(2, '0') + ':00';
+                startSel.innerHTML += `<option value="${h}">${label}</option>`;
+                endSel.innerHTML += `<option value="${h}">${label}</option>`;
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const resp = await fetch('/api/settings');
+                const settings = await resp.json();
+                const ln = settings.late_night || {};
+                document.getElementById('startHour').value = ln.start_hour || 1;
+                document.getElementById('endHour').value = ln.end_hour || 6;
+                document.getElementById('lateMsg').value = ln.message || '';
+                updateLateNightStatus(ln.start_hour || 1, ln.end_hour || 6);
+            } catch (e) {
+                console.log('載入設定失敗:', e);
+            }
+        }
+
+        function updateLateNightStatus(start, end) {
+            const now = new Date().getHours();
+            let isLate;
+            if (start <= end) {
+                isLate = now >= start && now < end;
+            } else {
+                isLate = now >= start || now < end;
+            }
+            const statusEl = document.getElementById('lateNightStatus');
+            if (isLate) {
+                statusEl.style.background = 'rgba(231, 76, 60, 0.2)';
+                statusEl.innerHTML = `🌙 <b>目前處於深夜時段</b>（${start}:00 ~ ${end}:00）— 系統會發送提醒`;
+            } else {
+                statusEl.style.background = 'rgba(46, 204, 113, 0.2)';
+                statusEl.innerHTML = `☀️ <b>目前不在深夜時段</b> — 提醒時段為每天 ${start}:00 ~ ${end}:00`;
+            }
+        }
+
+        async function saveSettings() {
+            const start = parseInt(document.getElementById('startHour').value);
+            const end = parseInt(document.getElementById('endHour').value);
+            const msg = document.getElementById('lateMsg').value.trim();
+            if (!msg) {
+                showToast('請填寫提醒訊息', 'error');
+                return;
+            }
+            try {
+                const resp = await fetch('/api/settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        late_night: { start_hour: start, end_hour: end, message: msg }
+                    })
+                });
+                const result = await resp.json();
+                if (result.ok) {
+                    showToast('✅ 設定已儲存！', 'success');
+                    updateLateNightStatus(start, end);
+                } else {
+                    showToast('儲存失敗', 'error');
+                }
+            } catch (e) {
+                showToast('儲存失敗：' + e.message, 'error');
+            }
+        }
+
+        // 初始載入
+        initHourSelects();
+        loadDeadlines();
+        loadSettings();
+        // 每 30 秒自動更新
+        setInterval(loadDeadlines, 30000);
+    </script>
+    <script src="/late-night-alert.js"></script>
+</body>
+</html>

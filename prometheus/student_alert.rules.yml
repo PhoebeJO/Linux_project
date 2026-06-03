@@ -1,0 +1,58 @@
+groups:
+  - name: student_alerts
+    rules:
+
+      # ── 作業快到期（24 小時內）──
+      - alert: HomeworkDeadlineSoon
+        expr: homework_deadline_hours_remaining < 24 and homework_deadline_hours_remaining > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: student
+        annotations:
+          summary: "📚 作業快到期了！"
+          description: "「{{ $labels.task }}」（{{ $labels.course }}）剩餘 {{ $value | printf \"%.1f\" }} 小時，記得完成！"
+
+      # ── 作業非常緊急（3 小時內）──
+      - alert: HomeworkDeadlineUrgent
+        expr: homework_deadline_hours_remaining < 3 and homework_deadline_hours_remaining > 0
+        for: 0m
+        labels:
+          severity: critical
+          category: student
+        annotations:
+          summary: "🚨 作業即將到期！"
+          description: "「{{ $labels.task }}」只剩 {{ $value | printf \"%.1f\" }} 小時！快去寫！"
+
+      # ── 股價大跌告警 ──
+      - alert: StockPriceDrop
+        expr: stock_change_pct < -(on() scalar(stock_change_pct * 0 + 3))
+        for: 2m
+        labels:
+          severity: warning
+          category: stock
+        annotations:
+          summary: "📉 股價大跌警告"
+          description: "{{ $labels.name }}（{{ $labels.symbol }}）跌幅達 {{ $value | printf \"%.2f\" }}%，請注意！"
+
+      # ── 股價大漲通知 ──
+      - alert: StockPriceRise
+        expr: stock_change_pct > 5
+        for: 2m
+        labels:
+          severity: info
+          category: stock
+        annotations:
+          summary: "📈 股價大漲通知"
+          description: "{{ $labels.name }}（{{ $labels.symbol }}）漲幅達 {{ $value | printf \"%.2f\" }}%！"
+
+      # ── 深夜使用提醒（根據網頁設定的時間）──
+      - alert: LateNightUsage
+        expr: late_night_active == 1
+        for: 1m
+        labels:
+          severity: info
+          category: student
+        annotations:
+          summary: "🌙 深夜了！記得休息"
+          description: "現在已超過設定的深夜時段，建議停止使用電腦，保持良好作息！明天繼續加油 💪"

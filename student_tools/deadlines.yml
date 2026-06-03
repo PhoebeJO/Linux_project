@@ -1,0 +1,12 @@
+# 作業截止日期設定檔
+# 格式：YYYY-MM-DD HH:MM:SS
+# 修改這個檔案後不需要重啟服務，會自動更新
+
+deadlines:
+  - name: "Linux 期末專題"
+    course: "Linux"
+    deadline: "2026-06-10 23:59:00"
+
+  - name: "資料庫期末考"
+    course: "資料庫"
+    deadline: "2026-06-11 10:00:00"
