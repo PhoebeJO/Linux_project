@@ -24,6 +24,28 @@ groups:
           summary: "🚨 作業即將到期！"
           description: "「{{ $labels.task }}」只剩 {{ $value | printf \"%.1f\" }} 小時！快去寫！"
 
+      # ── 股價大跌告警 ──
+      - alert: StockPriceDrop
+        expr: stock_change_pct < -(on() scalar(stock_change_pct * 0 + 3))
+        for: 2m
+        labels:
+          severity: warning
+          category: stock
+        annotations:
+          summary: "📉 股價大跌警告"
+          description: "{{ $labels.name }}（{{ $labels.symbol }}）跌幅達 {{ $value | printf \"%.2f\" }}%，請注意！"
+
+      # ── 股價大漲通知 ──
+      - alert: StockPriceRise
+        expr: stock_change_pct > 5
+        for: 2m
+        labels:
+          severity: info
+          category: stock
+        annotations:
+          summary: "📈 股價大漲通知"
+          description: "{{ $labels.name }}（{{ $labels.symbol }}）漲幅達 {{ $value | printf \"%.2f\" }}%！"
+
       # ── 深夜使用提醒（根據網頁設定的時間）──
       - alert: LateNightUsage
         expr: late_night_active == 1

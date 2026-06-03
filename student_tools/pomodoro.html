@@ -167,6 +167,14 @@
             logEl.prepend(p);
         }
 
+        function recordComplete(minutes) {
+            fetch('/api/pomodoro/complete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({minutes: minutes})
+            }).catch(err => console.log('記錄失敗:', err));
+        }
+
         function sendNotify(message) {
             fetch('/api/pomodoro/notify', {
                 method: 'POST',
@@ -199,6 +207,8 @@
             if (isWork) {
                 totalPomodoros++;
                 session++;
+                const workMin = parseInt(document.getElementById('workMin').value) || 25;
+                recordComplete(workMin);
                 if (session % 4 === 0) {
                     // 長休息
                     const longMin = parseInt(document.getElementById('longMin').value) || 15;

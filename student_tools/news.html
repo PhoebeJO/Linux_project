@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📰 AI 新聞</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff; min-height: 100vh; padding: 30px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .nav-links { margin-bottom: 20px; opacity: 0.7; }
+        .nav-links a { color: #4fc3f7; text-decoration: none; margin-right: 20px; }
+        .nav-links a:hover { text-decoration: underline; }
+        h1 { font-size: 2em; margin-bottom: 5px; }
+        .subtitle { opacity: 0.5; margin-bottom: 25px; font-size: 0.9em; }
+
+        .news-list { display: flex; flex-direction: column; gap: 15px; }
+        .news-card {
+            background: rgba(255,255,255,0.06);
+            border-radius: 14px; padding: 20px 25px;
+            border-left: 4px solid #4fc3f7;
+            transition: all 0.3s; cursor: pointer;
+        }
+        .news-card:hover { background: rgba(255,255,255,0.12); transform: translateX(5px); }
+        .news-title { font-size: 1.15em; font-weight: bold; margin-bottom: 6px; line-height: 1.4; }
+        .news-meta { font-size: 0.82em; opacity: 0.5; margin-bottom: 8px; }
+        .news-summary { font-size: 0.92em; opacity: 0.75; line-height: 1.6; }
+        .news-source {
+            display: inline-block; padding: 2px 10px;
+            background: rgba(79,195,247,0.15); color: #4fc3f7;
+            border-radius: 20px; font-size: 0.78em; margin-right: 8px;
+        }
+
+        .actions {
+            display: flex; gap: 12px; margin-bottom: 25px;
+        }
+        .btn {
+            padding: 10px 24px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 0.95em; font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: scale(1.03); }
+        .btn-refresh { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-telegram { background: #0088cc; color: #fff; }
+
+        .empty-msg { text-align: center; padding: 60px; opacity: 0.4; font-size: 1.1em; }
+
+        .toast {
+            position: fixed; bottom: 30px; right: 30px;
+            padding: 14px 24px; border-radius: 12px; font-weight: bold;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.4s; z-index: 999;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #2ecc71; }
+        .toast.error { background: #e74c3c; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="nav-links">
+        <a href="/">🍅 番茄鐘</a>
+        <a href="/admin">📚 作業管理</a>
+        <a href="/stocks">📈 股價</a>
+        <a href="/weather">☀️ 天氣</a>
+        <a href="/news">📰 新聞</a>
+    </div>
+    <h1>📰 AI 相關新聞</h1>
+    <p class="subtitle" id="updateTime">自動抓取最新 AI、科技新聞</p>
+
+    <div class="actions">
+        <button class="btn btn-refresh" onclick="loadNews()">🔄 重新整理</button>
+        <button class="btn btn-telegram" onclick="pushTelegram()">📱 推送到 Telegram</button>
+    </div>
+
+    <div class="news-list" id="newsList">
+        <div class="empty-msg">⏳ 載入新聞中...</div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+    let newsData = [];
+
+    async function loadNews() {
+        try {
+            const resp = await fetch('/api/news');
+            const data = await resp.json();
+            newsData = data.articles || [];
+            const list = document.getElementById('newsList');
+
+            if (newsData.length === 0) {
+                list.innerHTML = '<div class="empty-msg">暫無新聞，稍後重試</div>';
+                return;
+            }
+
+            list.innerHTML = newsData.map(a => `
+                <div class="news-card" onclick="window.open('${a.link}','_blank')">
+                    <div class="news-title">${escHtml(a.title)}</div>
+                    <div class="news-meta">
+                        <span class="news-source">${escHtml(a.source)}</span>
+                        ${a.published || ''}
+                    </div>
+                    <div class="news-summary">${escHtml(a.summary || '')}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('updateTime').textContent =
+                `最後更新：${data.updated_at || '--'} ｜ 每 2 小時自動抓取`;
+        } catch (e) {
+            document.getElementById('newsList').innerHTML =
+                '<div class="empty-msg">載入失敗：' + e.message + '</div>';
+        }
+    }
+
+    async function pushTelegram() {
+        try {
+            const resp = await fetch('/api/news/push', { method: 'POST' });
+            const r = await resp.json();
+            const t = document.getElementById('toast');
+            if (r.ok) {
+                t.textContent = '✅ 已推送到 Telegram！';
+                t.className = 'toast success show';
+            } else {
+                t.textContent = '推送失敗';
+                t.className = 'toast error show';
+            }
+            setTimeout(() => t.className = 'toast', 3000);
+        } catch (e) {}
+    }
+
+    function escHtml(s) {
+        if (!s) return '';
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    loadNews();
+    setInterval(loadNews, 600000);
+</script>
+</body>
+</html>

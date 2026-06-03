@@ -1,0 +1,25 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": { "h": 24, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src='http://localhost:8001/weather' style='width:100%;height:850px;border:none;border-radius:10px;'></iframe>"
+      },
+      "transparent": true
+    }
+  ],
+  "title": "☀️ 天氣預報",
+  "uid": "weather-forecast",
+  "version": 1,
+  "refresh": "30m",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser"
+}

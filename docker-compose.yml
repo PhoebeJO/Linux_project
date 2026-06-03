@@ -87,6 +87,8 @@ services:
     volumes:
       - ./student_tools/deadlines.yml:/app/deadlines.yml
       - ./student_tools/settings.yml:/app/settings.yml
+      - ./student_tools/stocks.yml:/app/stocks.yml
+      - ./student_tools/study_log.json:/app/study_log.json
     networks:
       - monitoring
 

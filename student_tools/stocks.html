@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 股價監控</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 30px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { font-size: 2em; margin-bottom: 5px; }
+        .subtitle { opacity: 0.6; margin-bottom: 8px; font-size: 0.9em; }
+        .update-info { opacity: 0.4; font-size: 0.8em; margin-bottom: 30px; }
+
+        .nav-links { margin-bottom: 20px; opacity: 0.7; }
+        .nav-links a { color: #4fc3f7; text-decoration: none; margin-right: 20px; }
+        .nav-links a:hover { text-decoration: underline; }
+
+        /* 股票卡片 */
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+        .stock-card {
+            background: rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 20px;
+            border-left: 4px solid #555;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .stock-card:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+        .stock-card.up   { border-left-color: #e74c3c; }
+        .stock-card.down { border-left-color: #2ecc71; }
+        .stock-card.flat { border-left-color: #95a5a6; }
+        .stock-card.loading { border-left-color: #f39c12; }
+
+        .stock-name   { font-size: 1em; opacity: 0.7; margin-bottom: 4px; }
+        .stock-symbol { font-size: 0.8em; opacity: 0.4; }
+        .stock-price  { font-size: 2.2em; font-weight: bold; margin: 10px 0 5px; }
+        .stock-change {
+            font-size: 1.1em; font-weight: bold;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .stock-change.up   { color: #e74c3c; }
+        .stock-change.down { color: #2ecc71; }
+        .stock-change.flat { color: #95a5a6; }
+        .stock-meta { font-size: 0.78em; opacity: 0.5; margin-top: 8px; }
+
+        .delete-btn {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(231,76,60,0.2); border: none;
+            color: #e74c3c; border-radius: 6px;
+            padding: 4px 8px; cursor: pointer; font-size: 0.8em;
+            transition: all 0.2s; opacity: 0;
+        }
+        .stock-card:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { background: rgba(231,76,60,0.5); }
+
+        /* 新增表單 */
+        .add-form {
+            background: rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .add-form h2 { font-size: 1.2em; margin-bottom: 15px; }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+        .form-group label { font-size: 0.82em; opacity: 0.6; }
+        .form-group input, .form-group select {
+            padding: 10px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+        }
+        .form-group input:focus { border-color: #4fc3f7; }
+        .btn {
+            padding: 10px 24px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 1em; font-weight: bold;
+            transition: all 0.3s; height: 42px;
+        }
+        .btn:hover { transform: scale(1.03); }
+        .btn-add { background: #2196f3; color: #fff; }
+        .btn-add:hover { background: #1976d2; }
+        .btn-refresh { background: rgba(255,255,255,0.1); color: #fff; }
+
+        /* 設定區 */
+        .settings-form {
+            background: rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 25px;
+            border-left: 4px solid #9b59b6;
+        }
+        .settings-form h2 { font-size: 1.2em; margin-bottom: 8px; }
+        .settings-form p { font-size: 0.85em; opacity: 0.6; margin-bottom: 15px; }
+
+        .toast {
+            position: fixed; bottom: 30px; right: 30px;
+            padding: 14px 24px; border-radius: 12px; font-weight: bold;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.4s; z-index: 999;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #2ecc71; }
+        .toast.error   { background: #e74c3c; }
+
+        .market-status {
+            display: inline-block; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.8em; font-weight: bold;
+            margin-left: 10px; vertical-align: middle;
+        }
+        .market-open   { background: rgba(46,204,113,0.2); color: #2ecc71; }
+        .market-closed { background: rgba(149,165,166,0.2); color: #95a5a6; }
+
+        .empty-msg { text-align: center; padding: 40px; opacity: 0.4; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="nav-links">
+        <a href="/">🍅 番茄鐘</a>
+        <a href="/admin">📚 作業管理</a>
+        <a href="/stocks">📈 股價監控</a>
+    </div>
+
+    <h1>📈 股價監控
+        <span class="market-status" id="marketStatus">⏳ 讀取中</span>
+    </h1>
+    <p class="subtitle">即時追蹤台股 & 美股，大漲大跌自動 Telegram 通知</p>
+    <p class="update-info" id="updateInfo">每 5 分鐘自動更新</p>
+
+    <!-- 股票卡片 -->
+    <div class="stock-grid" id="stockGrid">
+        <div class="empty-msg">⏳ 載入股價中，首次需要約 30 秒...</div>
+    </div>
+
+    <!-- 新增股票 -->
+    <div class="add-form">
+        <h2>➕ 新增監控股票</h2>
+        <div class="form-row">
+            <div class="form-group" style="flex:0.8">
+                <label>股票代號</label>
+                <input type="text" id="newSymbol" placeholder="台股：2330.TW  美股：AAPL">
+            </div>
+            <div class="form-group" style="flex:0.8">
+                <label>自訂名稱</label>
+                <input type="text" id="newName" placeholder="例：台積電">
+            </div>
+            <button class="btn btn-add" onclick="addStock()">新增</button>
+            <button class="btn btn-refresh" onclick="loadStocks()">🔄 重新整理</button>
+        </div>
+        <p style="margin-top:12px; font-size:0.82em; opacity:0.5;">
+            💡 台股格式：<b>2330.TW</b>（台積電）、<b>2317.TW</b>（鴻海）、<b>0050.TW</b>（台灣50）<br>
+            💡 美股格式：<b>AAPL</b>（Apple）、<b>TSLA</b>（Tesla）、<b>NVDA</b>（Nvidia）
+        </p>
+    </div>
+
+    <!-- 告警設定 -->
+    <div class="settings-form">
+        <h2>🔔 告警門檻設定</h2>
+        <p>當股價單日漲跌幅超過門檻時，透過 Telegram 發送通知</p>
+        <div class="form-row">
+            <div class="form-group" style="flex:0.5">
+                <label>📉 跌幅告警（%）</label>
+                <input type="number" id="dropPct" step="0.5" min="0.5" max="20" value="3">
+            </div>
+            <div class="form-group" style="flex:0.5">
+                <label>📈 漲幅通知（%）</label>
+                <input type="number" id="risePct" step="0.5" min="0.5" max="20" value="5">
+            </div>
+            <button class="btn btn-add" onclick="saveSettings()" style="background:#9b59b6;">💾 儲存</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    let stockData = [];
+
+    function formatPrice(price, symbol) {
+        if (!price || price === 0) return '--';
+        // 台股通常整數，美股小數
+        return symbol.endsWith('.TW')
+            ? price.toFixed(1)
+            : price.toFixed(2);
+    }
+
+    function formatChange(pct) {
+        if (pct === null || pct === undefined) return '--';
+        const sign = pct >= 0 ? '+' : '';
+        return `${sign}${pct.toFixed(2)}%`;
+    }
+
+    function getClass(pct) {
+        if (pct === null || pct === undefined) return 'flat';
+        if (pct > 0.1) return 'up';
+        if (pct < -0.1) return 'down';
+        return 'flat';
+    }
+
+    function getArrow(pct) {
+        if (!pct) return '→';
+        if (pct > 0.1) return '▲';
+        if (pct < -0.1) return '▼';
+        return '→';
+    }
+
+    function isMarketOpen() {
+        const now = new Date();
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const day = now.getDay(); // 0=Sun, 6=Sat
+        if (day === 0 || day === 6) return false;
+        const total = h * 60 + m;
+        // 台股 9:00~13:30
+        return total >= 540 && total <= 810;
+    }
+
+    async function loadStocks() {
+        try {
+            const resp = await fetch('/api/stocks');
+            const data = await resp.json();
+            stockData = data.stocks || [];
+
+            const grid = document.getElementById('stockGrid');
+            if (stockData.length === 0) {
+                grid.innerHTML = '<div class="empty-msg">尚無監控股票，點擊下方「新增」開始！</div>';
+                return;
+            }
+
+            grid.innerHTML = stockData.map((s, i) => {
+                const cls = getClass(s.change_pct);
+                const arrow = getArrow(s.change_pct);
+                const price = formatPrice(s.price, s.symbol);
+                const change = formatChange(s.change_pct);
+                const stale = s.stale ? '⚠️ 資料過舊' : (s.updated_at ? `更新：${s.updated_at.substring(11,16)}` : '取得中...');
+                return `
+                    <div class="stock-card ${cls}">
+                        <button class="delete-btn" onclick="deleteStock(${i})">✕</button>
+                        <div class="stock-name">${s.name}</div>
+                        <div class="stock-symbol">${s.symbol}</div>
+                        <div class="stock-price">${price}</div>
+                        <div class="stock-change ${cls}">${arrow} ${change}</div>
+                        <div class="stock-meta">${stale}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // 市場狀態
+            const statusEl = document.getElementById('marketStatus');
+            if (isMarketOpen()) {
+                statusEl.className = 'market-status market-open';
+                statusEl.textContent = '🟢 台股開盤中';
+            } else {
+                statusEl.className = 'market-status market-closed';
+                statusEl.textContent = '⚫ 休市';
+            }
+
+            // 更新時間
+            document.getElementById('updateInfo').textContent =
+                `最後整理：${new Date().toLocaleTimeString('zh-TW')} ｜ 每 5 分鐘自動更新`;
+
+            // 載入設定
+            const cfg = data.config || {};
+            if (cfg.alert_drop_pct) document.getElementById('dropPct').value = cfg.alert_drop_pct;
+            if (cfg.alert_rise_pct) document.getElementById('risePct').value = cfg.alert_rise_pct;
+
+        } catch (e) {
+            showToast('載入失敗：' + e.message, 'error');
+        }
+    }
+
+    async function addStock() {
+        const symbol = document.getElementById('newSymbol').value.trim().toUpperCase();
+        const name   = document.getElementById('newName').value.trim();
+        if (!symbol || !name) { showToast('請填寫股票代號和名稱', 'error'); return; }
+        try {
+            const resp = await fetch('/api/stocks', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({symbol, name})
+            });
+            const r = await resp.json();
+            if (r.ok) {
+                showToast(`✅ 已新增 ${name}，約 30 秒後顯示價格`, 'success');
+                document.getElementById('newSymbol').value = '';
+                document.getElementById('newName').value = '';
+                setTimeout(loadStocks, 5000);
+            } else {
+                showToast('新增失敗：' + (r.error || ''), 'error');
+            }
+        } catch (e) { showToast('新增失敗', 'error'); }
+    }
+
+    async function deleteStock(index) {
+        const s = stockData[index];
+        if (!confirm(`確定移除「${s.name}」嗎？`)) return;
+        try {
+            const resp = await fetch(`/api/stocks/${index}`, {method: 'DELETE'});
+            const r = await resp.json();
+            if (r.ok) { showToast('🗑️ 已移除', 'success'); loadStocks(); }
+        } catch (e) { showToast('刪除失敗', 'error'); }
+    }
+
+    async function saveSettings() {
+        const drop = parseFloat(document.getElementById('dropPct').value);
+        const rise = parseFloat(document.getElementById('risePct').value);
+        try {
+            const resp = await fetch('/api/stocks/settings', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({alert_drop_pct: drop, alert_rise_pct: rise})
+            });
+            const r = await resp.json();
+            if (r.ok) showToast('✅ 設定已儲存', 'success');
+        } catch (e) { showToast('儲存失敗', 'error'); }
+    }
+
+    function showToast(msg, type) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    loadStocks();
+    setInterval(loadStocks, 60000); // 每分鐘刷新 UI
+</script>
+</body>
+</html>
