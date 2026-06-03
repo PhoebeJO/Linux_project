@@ -93,6 +93,33 @@ services:
     networks:
       - monitoring
 
+  snake:
+    image: nginx:alpine
+    container_name: snake
+    restart: unless-stopped
+    ports:
+      - "8888:80"
+    volumes:
+      - ./snake:/usr/share/nginx/html:ro
+    networks:
+      - monitoring
+    depends_on:
+      - snake-backend
+
+  snake-backend:
+    build: ./backend
+    container_name: snake-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - snake_data:/data
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    networks:
+      - monitoring
+
   alertmanager:
     image: prom/alertmanager:latest
     container_name: alertmanager
