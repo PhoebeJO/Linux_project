@@ -1,0 +1,248 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "🍅 番茄鐘計時器",
+      "type": "text",
+      "gridPos": { "h": 18, "w": 12, "x": 0, "y": 0 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src='http://localhost:8001/pomodoro' style='width:100%;height:600px;border:none;border-radius:10px;'></iframe>"
+      }
+    },
+    {
+      "id": 2,
+      "title": "📚 作業截止倒數",
+      "type": "table",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "homework_deadline_hours_remaining",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "center",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "task" },
+            "properties": [
+              { "id": "displayName", "value": "作業名稱" },
+              { "id": "custom.width", "value": 200 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "course" },
+            "properties": [
+              { "id": "displayName", "value": "科目" },
+              { "id": "custom.width", "value": 120 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [
+              { "id": "displayName", "value": "剩餘時間（小時）" },
+              { "id": "custom.width", "value": 160 },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "red", "value": 0 },
+                    { "color": "orange", "value": 24 },
+                    { "color": "yellow", "value": 72 },
+                    { "color": "green", "value": 168 }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-background" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Time" },
+            "properties": [
+              { "id": "custom.hidden", "value": true }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "__name__" },
+            "properties": [
+              { "id": "custom.hidden", "value": true }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "instance" },
+            "properties": [
+              { "id": "custom.hidden", "value": true }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "job" },
+            "properties": [
+              { "id": "custom.hidden", "value": true }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              { "field": "Value", "desc": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "📊 作業截止倒數時間軸",
+      "type": "bargauge",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "homework_deadline_hours_remaining",
+          "legendFormat": "{{task}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 24 },
+              { "color": "yellow", "value": 72 },
+              { "color": "green", "value": 168 }
+            ]
+          },
+          "min": 0,
+          "max": 720
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "sizing": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "🌙 深夜使用提醒",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 18 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "late_night_active",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "☀️ 正常時段", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "🌙 該睡覺了！", "color": "red" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 5,
+      "title": "⚙️ 提醒時段設定",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 18 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "late_night_start_hour",
+          "legendFormat": "開始",
+          "refId": "A"
+        },
+        {
+          "expr": "late_night_end_hour",
+          "legendFormat": "結束",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "開始" },
+            "properties": [{ "id": "displayName", "value": "開始時間" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "結束" },
+            "properties": [{ "id": "displayName", "value": "結束時間" }]
+          }
+        ]
+      },
+      "options": {
+        "textMode": "value_and_name",
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 6,
+      "title": "📋 使用說明",
+      "type": "text",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 18 },
+      "options": {
+        "mode": "markdown",
+        "content": "### 🎓 學生工具使用指南\n\n| 功能 | 操作 |\n|------|------|\n| 🍅 **番茄鐘** | 點擊開始，25分鐘專注→5分鐘休息，Telegram 自動通知 |\n| 📚 **[作業管理](http://localhost:8001/admin)** | 在網頁上新增、修改、刪除作業及設定深夜提醒時間 |\n| 🌙 **深夜提醒** | 在作業管理頁面底部可設定提醒時段 |\n\n**顏色說明：** 🟢 > 7天 🟡 > 3天 🟠 < 24小時 🔴 超級緊急"
+      }
+    }
+  ],
+  "title": "🎓 學生工具",
+  "uid": "student-tools",
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser"
+}

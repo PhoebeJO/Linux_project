@@ -1,0 +1,27 @@
+{
+  "id": null,
+  "uid": "portal-links",
+  "title": "🔗 工具連結",
+  "tags": ["portal"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": false,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": { "hidden": true },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 20 },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex;flex-wrap:wrap;gap:16px;padding:16px;\">\n  <a href=\"http://localhost:8888/report.html\" target=\"_blank\" style=\"display:flex;flex-direction:column;gap:6px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;padding:20px;text-decoration:none;min-width:160px;transition:border-color .15s;\" onmouseover=\"this.style.borderColor='#f46800'\" onmouseout=\"this.style.borderColor='#2a2d3a'\">\n    <span style=\"font-size:1.4rem;\">🐛</span>\n    <span style=\"color:#e0e0e0;font-weight:600;font-size:.92rem;\">回報問題</span>\n    <span style=\"color:#555;font-size:.75rem;\">發現 bug？通知管理員</span>\n  </a>\n  <a href=\"http://localhost:8888/snake.html\" target=\"_blank\" style=\"display:flex;flex-direction:column;gap:6px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;padding:20px;text-decoration:none;min-width:160px;\" onmouseover=\"this.style.borderColor='#f46800'\" onmouseout=\"this.style.borderColor='#2a2d3a'\">\n    <span style=\"font-size:1.4rem;\">🐍</span>\n    <span style=\"color:#e0e0e0;font-weight:600;font-size:.92rem;\">貪吃蛇</span>\n    <span style=\"color:#555;font-size:.75rem;\">玩遊戲 & 排行榜</span>\n  </a>\n  <a href=\"http://localhost:8888\" target=\"_blank\" style=\"display:flex;flex-direction:column;gap:6px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;padding:20px;text-decoration:none;min-width:160px;\" onmouseover=\"this.style.borderColor='#f46800'\" onmouseout=\"this.style.borderColor='#2a2d3a'\">\n    <span style=\"font-size:1.4rem;\">🏠</span>\n    <span style=\"color:#e0e0e0;font-weight:600;font-size:.92rem;\">首頁</span>\n    <span style=\"color:#555;font-size:.75rem;\">所有功能入口</span>\n  </a>\n  <a href=\"http://localhost:9093\" target=\"_blank\" style=\"display:flex;flex-direction:column;gap:6px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;padding:20px;text-decoration:none;min-width:160px;\" onmouseover=\"this.style.borderColor='#f46800'\" onmouseout=\"this.style.borderColor='#2a2d3a'\">\n    <span style=\"font-size:1.4rem;\">🔔</span>\n    <span style=\"color:#e0e0e0;font-weight:600;font-size:.92rem;\">Alertmanager</span>\n    <span style=\"color:#555;font-size:.75rem;\">告警狀態管理</span>\n  </a>\n</div>"
+      },
+      "transparent": true
+    }
+  ]
+}

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍅 番茄鐘</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 50px 60px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .phase {
+            font-size: 1.3em;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+        .session-info {
+            font-size: 1em;
+            margin-bottom: 30px;
+            opacity: 0.7;
+        }
+        .timer {
+            font-size: 8em;
+            font-weight: bold;
+            letter-spacing: 5px;
+            margin: 20px 0;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .buttons { margin: 30px 0 20px; }
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn:hover { transform: scale(1.05); }
+        .btn-start { background: #2ecc71; color: #fff; }
+        .btn-start:hover { background: #27ae60; }
+        .btn-pause { background: #f39c12; color: #fff; }
+        .btn-pause:hover { background: #e67e22; }
+        .btn-reset { background: #e74c3c; color: #fff; }
+        .btn-reset:hover { background: #c0392b; }
+        .btn-skip { background: rgba(255,255,255,0.2); color: #fff; }
+        .btn-skip:hover { background: rgba(255,255,255,0.3); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .settings {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        .settings label {
+            font-size: 0.9em;
+            margin: 0 8px;
+            opacity: 0.8;
+        }
+        .settings input {
+            width: 60px;
+            padding: 5px;
+            border: none;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1em;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        .settings input::placeholder { color: rgba(255,255,255,0.5); }
+        .log {
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            opacity: 0.7;
+            text-align: left;
+            padding: 10px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 10px;
+        }
+        .log p { margin: 3px 0; }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 3px;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: #2ecc71;
+            transition: width 1s linear;
+        }
+        .work .progress-fill { background: #e74c3c; }
+        .break .progress-fill { background: #2ecc71; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍅 番茄鐘</h1>
+        <div class="phase" id="phase">準備開始</div>
+        <div class="session-info" id="sessionInfo">點擊「開始」啟動番茄鐘</div>
+        <div class="timer" id="timer">25:00</div>
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="buttons">
+            <button class="btn btn-start" id="startBtn" onclick="startTimer()">▶ 開始</button>
+            <button class="btn btn-pause" id="pauseBtn" onclick="pauseTimer()" disabled>⏸ 暫停</button>
+            <button class="btn btn-reset" id="resetBtn" onclick="resetTimer()">🔄 重置</button>
+            <button class="btn btn-skip" id="skipBtn" onclick="skipPhase()" disabled>⏭ 跳過</button>
+        </div>
+        <div class="settings">
+            <label>工作 <input type="number" id="workMin" value="25" min="1" max="60"> 分</label>
+            <label>短休息 <input type="number" id="shortMin" value="5" min="1" max="30"> 分</label>
+            <label>長休息 <input type="number" id="longMin" value="15" min="1" max="60"> 分</label>
+        </div>
+        <div class="log" id="log"></div>
+    </div>
+
+    <audio id="alarmSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
+    </audio>
+
+    <script>
+        let interval = null;
+        let remaining = 25 * 60;
+        let totalTime = 25 * 60;
+        let isRunning = false;
+        let isWork = true;
+        let session = 0;
+        let totalPomodoros = 0;
+
+        const timerEl     = document.getElementById('timer');
+        const phaseEl     = document.getElementById('phase');
+        const sessionEl   = document.getElementById('sessionInfo');
+        const startBtn    = document.getElementById('startBtn');
+        const pauseBtn    = document.getElementById('pauseBtn');
+        const skipBtn     = document.getElementById('skipBtn');
+        const progressFill= document.getElementById('progressFill');
+        const progressBar = document.getElementById('progressBar');
+        const logEl       = document.getElementById('log');
+
+        function fmt(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        function addLog(msg) {
+            const now = new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
+            const p = document.createElement('p');
+            p.textContent = `${now} — ${msg}`;
+            logEl.prepend(p);
+        }
+
+        function recordComplete(minutes) {
+            fetch('/api/pomodoro/complete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({minutes: minutes})
+            }).catch(err => console.log('記錄失敗:', err));
+        }
+
+        function sendNotify(message) {
+            fetch('/api/pomodoro/notify', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: message})
+            }).catch(err => console.log('Telegram 通知發送失敗:', err));
+        }
+
+        function updateDisplay() {
+            timerEl.textContent = fmt(remaining);
+            const pct = ((totalTime - remaining) / totalTime) * 100;
+            progressFill.style.width = pct + '%';
+            document.title = `${fmt(remaining)} — ${isWork ? '🍅 專注中' : '☕ 休息中'}`;
+        }
+
+        function tick() {
+            remaining--;
+            updateDisplay();
+            if (remaining <= 0) {
+                clearInterval(interval);
+                isRunning = false;
+                onPhaseEnd();
+            }
+        }
+
+        function onPhaseEnd() {
+            // 播放提示音
+            try { document.getElementById('alarmSound').play(); } catch(e) {}
+
+            if (isWork) {
+                totalPomodoros++;
+                session++;
+                const workMin = parseInt(document.getElementById('workMin').value) || 25;
+                recordComplete(workMin);
+                if (session % 4 === 0) {
+                    // 長休息
+                    const longMin = parseInt(document.getElementById('longMin').value) || 15;
+                    addLog(`🎉 完成 ${totalPomodoros} 個番茄！長休息 ${longMin} 分鐘`);
+                    sendNotify(`🎉 <b>完成 ${totalPomodoros} 個番茄！</b>\n長休息 ${longMin} 分鐘，喝水伸展 🚶`);
+                    remaining = longMin * 60;
+                    totalTime = remaining;
+                    phaseEl.textContent = `☕ 長休息`;
+                } else {
+                    // 短休息
+                    const shortMin = parseInt(document.getElementById('shortMin').value) || 5;
+                    addLog(`✅ 第 ${totalPomodoros} 個番茄完成！短休息 ${shortMin} 分鐘`);
+                    sendNotify(`✅ <b>第 ${totalPomodoros} 個番茄完成！</b>\n短休息 ${shortMin} 分鐘，放鬆眼睛 👀`);
+                    remaining = shortMin * 60;
+                    totalTime = remaining;
+                    phaseEl.textContent = `☕ 短休息`;
+                }
+                isWork = false;
+                progressBar.className = 'progress-bar break';
+            } else {
+                // 開始新一輪工作
+                const workMin = parseInt(document.getElementById('workMin').value) || 25;
+                addLog(`🍅 開始第 ${totalPomodoros + 1} 個番茄`);
+                sendNotify(`🍅 <b>休息結束！</b>\n開始第 ${totalPomodoros + 1} 個番茄，保持專注 💪`);
+                remaining = workMin * 60;
+                totalTime = remaining;
+                phaseEl.textContent = `🍅 專注中 — 第 ${totalPomodoros + 1} 個番茄`;
+                isWork = true;
+                progressBar.className = 'progress-bar work';
+            }
+
+            sessionEl.textContent = `已完成 ${totalPomodoros} 個番茄`;
+            progressFill.style.width = '0%';
+            updateDisplay();
+
+            // 自動開始下一個階段
+            startTimer();
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+
+            if (remaining === totalTime && isWork && totalPomodoros === 0) {
+                const workMin = parseInt(document.getElementById('workMin').value) || 25;
+                remaining = workMin * 60;
+                totalTime = remaining;
+                session = 0;
+                addLog(`🍅 番茄鐘開始！工作 ${workMin} 分鐘`);
+                sendNotify(`🍅 <b>番茄鐘開始！</b>\n專注學習 ${workMin} 分鐘 💪`);
+                phaseEl.textContent = `🍅 專注中 — 第 1 個番茄`;
+                progressBar.className = 'progress-bar work';
+            }
+
+            interval = setInterval(tick, 1000);
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            skipBtn.disabled = false;
+            updateDisplay();
+        }
+
+        function pauseTimer() {
+            if (!isRunning) return;
+            clearInterval(interval);
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            addLog('⏸ 暫停');
+        }
+
+        function resetTimer() {
+            clearInterval(interval);
+            isRunning = false;
+            isWork = true;
+
+            if (totalPomodoros > 0) {
+                sendNotify(`⏹ <b>番茄鐘結束</b>\n今天完成了 <b>${totalPomodoros}</b> 個番茄，辛苦了！🎓`);
+            }
+
+            const workMin = parseInt(document.getElementById('workMin').value) || 25;
+            remaining = workMin * 60;
+            totalTime = remaining;
+            totalPomodoros = 0;
+            session = 0;
+
+            phaseEl.textContent = '準備開始';
+            sessionEl.textContent = '點擊「開始」啟動番茄鐘';
+            progressFill.style.width = '0%';
+            progressBar.className = 'progress-bar';
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            skipBtn.disabled = true;
+            updateDisplay();
+            document.title = '🍅 番茄鐘';
+            addLog('🔄 重置');
+        }
+
+        function skipPhase() {
+            clearInterval(interval);
+            isRunning = false;
+            remaining = 0;
+            onPhaseEnd();
+        }
+
+        updateDisplay();
+    </script>
+    <script src="/late-night-alert.js"></script>
+</body>
+</html>

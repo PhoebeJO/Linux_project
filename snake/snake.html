@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>貪吃蛇</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111217;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px;
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    color: #e0e0e0;
+  }
+  .left { display: flex; flex-direction: column; align-items: center; }
+  h1 { font-size: 1.3rem; color: #f46800; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 10px; }
+  #scoreboard { display: flex; gap: 32px; margin-bottom: 10px; font-size: 0.85rem; color: #aaa; }
+  #scoreboard span { color: #f46800; font-weight: bold; font-size: 1.05rem; }
+  canvas { border: 2px solid #f46800; border-radius: 4px; box-shadow: 0 0 24px rgba(244,104,0,0.3); display: block; }
+  #message { margin-top: 12px; font-size: 0.8rem; color: #555; letter-spacing: 1px; }
+  #message b { color: #f46800; }
+  #report-link {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: #333;
+    text-decoration: none;
+    letter-spacing: 1px;
+    display: block;
+    text-align: center;
+  }
+  #report-link:hover { color: #f46800; }
+
+  /* game over overlay */
+  #overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0;
+    width: 400px; height: 400px;
+    background: rgba(0,0,0,0.75);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 4px;
+  }
+  #overlay.show { display: flex; }
+  #overlay h2 { color: #f46800; font-size: 1.6rem; }
+  #overlay p { color: #aaa; font-size: 0.9rem; }
+  #overlay input {
+    background: #1a1d27; border: 1px solid #f46800; border-radius: 4px;
+    color: #fff; padding: 6px 12px; font-size: 0.9rem; text-align: center;
+    outline: none; width: 180px;
+  }
+  #overlay button {
+    background: #f46800; border: none; border-radius: 4px;
+    color: #fff; padding: 7px 24px; font-size: 0.9rem; cursor: pointer;
+  }
+  #overlay button:hover { background: #d45800; }
+  .canvas-wrap { position: relative; }
+
+  /* leaderboard */
+  .right { min-width: 200px; }
+  .right h2 { font-size: 0.95rem; color: #f46800; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
+  .lb-row { display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 8px; border-bottom: 1px solid #1e2130; font-size: 0.82rem; }
+  .lb-row:first-of-type { border-top: 1px solid #1e2130; }
+  .lb-rank { color: #555; width: 20px; }
+  .lb-rank.gold { color: #f46800; font-weight: bold; }
+  .lb-name { flex: 1; margin: 0 8px; color: #ccc; }
+  .lb-score { color: #f46800; font-weight: bold; }
+  .lb-empty { color: #444; font-size: 0.8rem; margin-top: 8px; }
+
+</style>
+</head>
+<body>
+<div class="left">
+  <h1>🐍 貪吃蛇</h1>
+  <div id="scoreboard">
+    分數：<span id="score">0</span>
+    &nbsp;&nbsp;最高：<span id="best">0</span>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c" width="400" height="400"></canvas>
+    <div id="overlay">
+      <h2>GAME OVER</h2>
+      <p id="final-score"></p>
+      <input id="name-input" type="text" maxlength="20" placeholder="輸入你的名字" />
+      <button id="submit-btn">儲存 & 重玩</button>
+    </div>
+  </div>
+  <div id="message">按 <b>空白鍵</b> 開始 &nbsp;|&nbsp; <b>方向鍵</b> 控制</div>
+</div>
+
+<div class="right">
+  <h2>🏆 排行榜</h2>
+  <div id="leaderboard"><div class="lb-empty">還沒有紀錄</div></div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+const COLS = 20, ROWS = 20, SIZE = 20;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const bestEl  = document.getElementById('best');
+const msgEl   = document.getElementById('message');
+const overlay = document.getElementById('overlay');
+const nameInput = document.getElementById('name-input');
+const submitBtn = document.getElementById('submit-btn');
+
+let snake, dir, nextDir, food, score, best, loop, state;
+
+function init() {
+  snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  dir = {x:1,y:0}; nextDir = {x:1,y:0};
+  score = 0; scoreEl.textContent = 0;
+  spawnFood(); draw();
+}
+
+function spawnFood() {
+  const empty = [];
+  for (let x=0;x<COLS;x++) for (let y=0;y<ROWS;y++)
+    if (!snake.find(s=>s.x===x&&s.y===y)) empty.push({x,y});
+  food = empty[Math.floor(Math.random()*empty.length)];
+}
+
+function step() {
+  dir = nextDir;
+  const head = {x: snake[0].x+dir.x, y: snake[0].y+dir.y};
+  if (head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS||snake.find(s=>s.x===head.x&&s.y===head.y)) {
+    gameOver(); return;
+  }
+  snake.unshift(head);
+  if (head.x===food.x&&head.y===food.y) {
+    score++;
+    scoreEl.textContent = score;
+    if (score > (best||0)) { best=score; bestEl.textContent=best; localStorage.setItem('snake_best', best); }
+    spawnFood();
+  } else { snake.pop(); }
+  draw();
+}
+
+function draw() {
+  ctx.fillStyle = '#111217';
+  ctx.fillRect(0,0,400,400);
+  ctx.strokeStyle = '#1a1d27'; ctx.lineWidth = 0.5;
+  for (let i=0;i<=COLS;i++) {
+    ctx.beginPath(); ctx.moveTo(i*SIZE,0); ctx.lineTo(i*SIZE,400); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,i*SIZE); ctx.lineTo(400,i*SIZE); ctx.stroke();
+  }
+  ctx.fillStyle = '#ff4d4d'; ctx.shadowColor='#ff4d4d'; ctx.shadowBlur=10;
+  ctx.fillRect(food.x*SIZE+2, food.y*SIZE+2, SIZE-4, SIZE-4);
+  ctx.shadowBlur = 0;
+  snake.forEach((s,i) => {
+    const ratio = 1 - i/snake.length;
+    ctx.fillStyle = i===0 ? '#f46800' : `rgba(244,104,0,${0.3+ratio*0.5})`;
+    ctx.shadowColor = i===0 ? '#f46800' : 'transparent';
+    ctx.shadowBlur  = i===0 ? 8 : 0;
+    ctx.fillRect(s.x*SIZE+1, s.y*SIZE+1, SIZE-2, SIZE-2);
+  });
+  ctx.shadowBlur = 0;
+}
+
+function gameOver() {
+  clearInterval(loop); state = 'dead';
+  document.getElementById('final-score').textContent = `分數：${score}`;
+  nameInput.value = localStorage.getItem('snake_name') || '';
+  overlay.classList.add('show');
+  nameInput.focus();
+}
+
+async function saveScore(name) {
+  try {
+    await fetch(`${API}/api/score`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, score})
+    });
+    loadLeaderboard();
+  } catch(e) { console.warn('API 離線，分數未儲存', e); }
+}
+
+async function loadLeaderboard() {
+  try {
+    const res = await fetch(`${API}/api/leaderboard`);
+    const rows = await res.json();
+    const el = document.getElementById('leaderboard');
+    if (!rows.length) { el.innerHTML = '<div class="lb-empty">還沒有紀錄</div>'; return; }
+    el.innerHTML = rows.map((r,i) => `
+      <div class="lb-row">
+        <span class="lb-rank ${i===0?'gold':''}">${i+1}</span>
+        <span class="lb-name">${r.name}</span>
+        <span class="lb-score">${r.score}</span>
+      </div>`).join('');
+  } catch(e) { /* API 離線時靜默失敗 */ }
+}
+
+function start() {
+  clearInterval(loop);
+  overlay.classList.remove('show');
+  init(); state = 'running';
+  loop = setInterval(step, 100);
+  msgEl.innerHTML = '<b>方向鍵</b> 控制 &nbsp;|&nbsp; <b>空白鍵</b> 暫停';
+}
+
+submitBtn.addEventListener('click', () => {
+  const name = nameInput.value.trim() || 'Player';
+  localStorage.setItem('snake_name', name);
+  saveScore(name);
+  start();
+});
+
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitBtn.click();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (state === 'dead') return;
+    if (state === 'running') {
+      clearInterval(loop); state = 'paused';
+      msgEl.innerHTML = '已暫停 &nbsp;|&nbsp; 按 <b>空白鍵</b> 繼續';
+    } else { start(); }
+    return;
+  }
+  const map = {ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}};
+  if (map[e.key] && !(map[e.key].x===-dir.x && map[e.key].y===-dir.y)) {
+    nextDir = map[e.key]; e.preventDefault();
+  }
+});
+
+best = parseInt(localStorage.getItem('snake_best')||'0');
+bestEl.textContent = best;
+state = 'idle';
+init();
+loadLeaderboard();
+
+</script>
+</body>
+</html>

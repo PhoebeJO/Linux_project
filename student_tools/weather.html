@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☀️ 天氣預報</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            color: #fff; min-height: 100vh; padding: 30px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .nav-links { margin-bottom: 20px; opacity: 0.8; }
+        .nav-links a { color: #fff; text-decoration: none; margin-right: 20px; }
+        .nav-links a:hover { text-decoration: underline; }
+        h1 { font-size: 2em; margin-bottom: 25px; }
+
+        .weather-main {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px; padding: 35px;
+            text-align: center; margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+        .city-name { font-size: 1.3em; opacity: 0.8; margin-bottom: 5px; }
+        .temp-big { font-size: 5em; font-weight: bold; }
+        .condition { font-size: 1.4em; margin: 10px 0; }
+        .details {
+            display: flex; justify-content: center; gap: 40px;
+            margin-top: 20px; font-size: 1.05em; opacity: 0.85;
+        }
+
+        .forecast {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 15px; margin-bottom: 25px;
+        }
+        .forecast-card {
+            background: rgba(255,255,255,0.12);
+            border-radius: 14px; padding: 18px; text-align: center;
+        }
+        .forecast-card .time { font-size: 0.9em; opacity: 0.7; }
+        .forecast-card .temp { font-size: 1.8em; font-weight: bold; margin: 8px 0; }
+        .forecast-card .desc { font-size: 0.9em; }
+
+        .settings-box {
+            background: rgba(255,255,255,0.12);
+            border-radius: 16px; padding: 25px;
+        }
+        .settings-box h2 { font-size: 1.2em; margin-bottom: 15px; }
+        .form-row { display: flex; gap: 12px; align-items: flex-end; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+        .form-group label { font-size: 0.85em; opacity: 0.7; }
+        .form-group input, .form-group select {
+            padding: 10px 14px; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px; background: rgba(255,255,255,0.1);
+            color: #fff; font-size: 1em; outline: none;
+        }
+        .btn {
+            padding: 10px 24px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 1em; font-weight: bold;
+            background: rgba(255,255,255,0.25); color: #fff;
+            height: 42px; transition: all 0.3s;
+        }
+        .btn:hover { background: rgba(255,255,255,0.35); }
+        .rain-alert {
+            background: rgba(255,255,0,0.15); border-radius: 12px;
+            padding: 15px; margin-top: 15px; font-size: 0.95em;
+            display: none;
+        }
+        .toast {
+            position: fixed; bottom: 30px; right: 30px;
+            padding: 14px 24px; border-radius: 12px; font-weight: bold;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.4s; z-index: 999;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #2ecc71; }
+        .toast.error { background: #e74c3c; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="nav-links">
+        <a href="/">🍅 番茄鐘</a>
+        <a href="/admin">📚 作業管理</a>
+        <a href="/stocks">📈 股價</a>
+        <a href="/weather">☀️ 天氣</a>
+        <a href="/news">📰 新聞</a>
+    </div>
+    <h1>☀️ 天氣預報</h1>
+
+    <div class="weather-main" id="weatherMain">
+        <div class="city-name" id="cityName">載入中...</div>
+        <div class="temp-big" id="tempBig">--°</div>
+        <div class="condition" id="condition">--</div>
+        <div class="details">
+            <span>💧 濕度 <b id="humidity">--%</b></span>
+            <span>🌧️ 降雨 <b id="rainChance">--%</b></span>
+            <span>🌬️ 風速 <b id="wind">-- km/h</b></span>
+        </div>
+        <div class="rain-alert" id="rainAlert">🌂 今天有降雨機率，記得帶傘！</div>
+    </div>
+
+    <div class="forecast" id="forecast"></div>
+
+    <div class="settings-box">
+        <h2>⚙️ 設定城市</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>城市名稱（英文）</label>
+                <input type="text" id="cityInput" placeholder="例：Taoyuan、Taipei、Hsinchu">
+            </div>
+            <button class="btn" onclick="saveCity()">💾 儲存</button>
+        </div>
+        <p style="margin-top:10px; font-size:0.82em; opacity:0.5;">
+            常用城市：Taipei（台北）、Taoyuan（桃園）、Hsinchu（新竹）、Taichung（台中）、Kaohsiung（高雄）
+        </p>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+    async function loadWeather() {
+        try {
+            const resp = await fetch('/api/weather');
+            const d = await resp.json();
+            if (!d.city) { document.getElementById('cityName').textContent = '請先設定城市'; return; }
+            document.getElementById('cityName').textContent = d.city;
+            document.getElementById('tempBig').textContent = d.temp_c ? d.temp_c + '°' : '--°';
+            document.getElementById('condition').textContent = d.condition || '--';
+            document.getElementById('humidity').textContent = (d.humidity || '--') + '%';
+            document.getElementById('rainChance').textContent = (d.rain_chance || '0') + '%';
+            document.getElementById('wind').textContent = (d.wind_speed || '--') + ' km/h';
+            document.getElementById('cityInput').value = d.city || '';
+
+            const alert = document.getElementById('rainAlert');
+            if (parseInt(d.rain_chance || 0) > 30) {
+                alert.style.display = 'block';
+            }
+
+            const fc = d.forecast || [];
+            document.getElementById('forecast').innerHTML = fc.map(f => `
+                <div class="forecast-card">
+                    <div class="time">${f.time}</div>
+                    <div class="temp">${f.temp}°</div>
+                    <div class="desc">${f.desc} 🌧️${f.rain}%</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            document.getElementById('cityName').textContent = '載入失敗';
+        }
+    }
+
+    async function saveCity() {
+        const city = document.getElementById('cityInput').value.trim();
+        if (!city) return;
+        try {
+            const resp = await fetch('/api/weather/city', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({city})
+            });
+            const r = await resp.json();
+            if (r.ok) {
+                const t = document.getElementById('toast');
+                t.textContent = '✅ 城市已更新，重新取得天氣中...';
+                t.className = 'toast success show';
+                setTimeout(() => t.className = 'toast', 3000);
+                setTimeout(loadWeather, 3000);
+            }
+        } catch (e) {}
+    }
+
+    loadWeather();
+    setInterval(loadWeather, 300000);
+</script>
+</body>
+</html>

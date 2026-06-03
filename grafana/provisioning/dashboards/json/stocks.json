@@ -1,0 +1,88 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "📈 股價管理",
+      "type": "text",
+      "gridPos": { "h": 22, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src='http://localhost:8001/stocks' style='width:100%;height:800px;border:none;border-radius:10px;'></iframe>"
+      },
+      "transparent": true
+    },
+    {
+      "id": 2,
+      "title": "📉 當日漲跌幅",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "stock_change_pct",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": -100 },
+              { "color": "orange", "value": -3 },
+              { "color": "green", "value": 0 },
+              { "color": "super-light-green", "value": 3 }
+            ]
+          },
+          "min": -10,
+          "max": 10
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color"
+      }
+    },
+    {
+      "id": 3,
+      "title": "📊 股價走勢",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "stock_price",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" }
+      }
+    }
+  ],
+  "title": "📈 股價監控",
+  "uid": "stock-monitor",
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser"
+}

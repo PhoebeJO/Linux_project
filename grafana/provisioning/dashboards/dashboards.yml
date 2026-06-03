@@ -6,3 +6,13 @@ providers:
     type: file
     options:
       path: /etc/grafana/provisioning/dashboards
+
+  - name: 'student-tools'
+    orgId: 1
+    folder: '學生工具'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false
