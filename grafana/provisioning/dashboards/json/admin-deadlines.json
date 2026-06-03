@@ -1,0 +1,25 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": { "h": 30, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src='http://localhost:8001/admin' style='width:100%;height:1100px;border:none;border-radius:10px;'></iframe>"
+      },
+      "transparent": true
+    }
+  ],
+  "title": "📝 作業管理 & 設定",
+  "uid": "admin-deadlines",
+  "version": 2,
+  "refresh": "",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser"
+}

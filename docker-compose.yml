@@ -10,6 +10,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+      - ./prometheus/student_alert.rules.yml:/etc/prometheus/student_alert.rules.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -28,6 +29,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_PANELS_DISABLE_SANITIZE_HTML=true
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -71,6 +73,22 @@ services:
     privileged: true
     devices:
       - /dev/kmsg
+
+  student-exporter:
+    build: ./student_tools
+    container_name: student-exporter
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - TZ=Asia/Taipei
+    env_file:
+      - ./student_tools/.env
+    volumes:
+      - ./student_tools/deadlines.yml:/app/deadlines.yml
+      - ./student_tools/settings.yml:/app/settings.yml
+    networks:
+      - monitoring
 
   alertmanager:
     image: prom/alertmanager:latest

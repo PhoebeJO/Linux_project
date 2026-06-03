@@ -10,6 +10,7 @@ alerting:
 
 rule_files:
   - "alert.rules.yml"
+  - "student_alert.rules.yml"
 
 scrape_configs:
   - job_name: 'prometheus'
@@ -25,3 +26,7 @@ scrape_configs:
   - job_name: 'cadvisor'
     static_configs:
       - targets: ['cadvisor:8080']
+
+  - job_name: 'student-exporter'
+    static_configs:
+      - targets: ['student-exporter:8001']
