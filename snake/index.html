@@ -29,6 +29,20 @@
     letter-spacing: 2px;
     margin-bottom: 40px;
   }
+  .section-title {
+    font-size: 1rem;
+    color: #f46800;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    margin-top: 50px;
+  }
+  .section-sub {
+    font-size: 0.75rem;
+    color: #444;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -58,31 +72,12 @@
 </style>
 </head>
 <body>
+
+  <!-- 監控戰情室 -->
   <h1>監控戰情室</h1>
   <p class="subtitle">Linux Project · Dashboard Portal</p>
 
   <div class="grid">
-    <a class="card" href="/snake.html">
-      <span class="icon">🐍</span>
-      <span class="card-title">貪吃蛇</span>
-      <span class="card-desc">玩遊戲，分數自動存入排行榜</span>
-      <span class="arrow">→</span>
-    </a>
-
-    <a class="card" href="/history.html">
-      <span class="icon">📋</span>
-      <span class="card-title">遊戲紀錄</span>
-      <span class="card-desc">所有對局紀錄與個人遊戲歷史</span>
-      <span class="arrow">→</span>
-    </a>
-
-    <a class="card" href="/report.html">
-      <span class="icon">🐛</span>
-      <span class="card-title">回報問題</span>
-      <span class="card-desc">發現 bug？填寫後直接通知管理員</span>
-      <span class="arrow">→</span>
-    </a>
-
     <a class="card" href="http://localhost:3000" target="_blank">
       <span class="icon">📊</span>
       <span class="card-title">Grafana</span>
@@ -107,5 +102,87 @@
       <span class="ext">外部連結 ↗</span>
     </a>
   </div>
+
+  <!-- 學生工具 -->
+  <h1 class="section-title">學生工具</h1>
+  <p class="section-sub">Student Tools</p>
+
+  <div class="grid">
+    <a class="card" href="http://localhost:8001" target="_blank">
+      <span class="icon">🍅</span>
+      <span class="card-title">番茄鐘</span>
+      <span class="card-desc">25 分鐘專注計時，Telegram 自動通知</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+
+    <a class="card" href="http://localhost:8001/admin" target="_blank">
+      <span class="icon">📚</span>
+      <span class="card-title">作業管理</span>
+      <span class="card-desc">新增、編輯作業截止日期與深夜提醒設定</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+
+    <a class="card" href="http://localhost:8001/stocks" target="_blank">
+      <span class="icon">📈</span>
+      <span class="card-title">股價監控</span>
+      <span class="card-desc">即時台股、美股追蹤，大漲大跌 Telegram 通知</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+
+    <a class="card" href="http://localhost:8001/weather" target="_blank">
+      <span class="icon">☀️</span>
+      <span class="card-title">天氣預報</span>
+      <span class="card-desc">即時天氣、降雨機率，下雨提醒帶傘</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+
+    <a class="card" href="http://localhost:8001/news" target="_blank">
+      <span class="icon">📰</span>
+      <span class="card-title">AI 新聞</span>
+      <span class="card-desc">自動抓取 AI 科技新聞，一鍵推送 Telegram</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+
+    <a class="card" href="http://localhost:3000/d/student-tools" target="_blank">
+      <span class="icon">🎓</span>
+      <span class="card-title">學生儀表板</span>
+      <span class="card-desc">Grafana 綜合儀表板，作業倒數、學習統計</span>
+      <span class="arrow">→</span>
+      <span class="ext">外部連結 ↗</span>
+    </a>
+  </div>
+
+  <!-- Game Start -->
+  <h1 class="section-title">Game Start</h1>
+  <p class="section-sub">Mini Games</p>
+
+  <div class="grid">
+    <a class="card" href="/snake.html">
+      <span class="icon">🐍</span>
+      <span class="card-title">貪吃蛇</span>
+      <span class="card-desc">玩遊戲，分數自動存入排行榜</span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="card" href="/history.html">
+      <span class="icon">📋</span>
+      <span class="card-title">遊戲紀錄</span>
+      <span class="card-desc">所有對局紀錄與個人遊戲歷史</span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="card" href="/report.html">
+      <span class="icon">🐛</span>
+      <span class="card-title">問題回報</span>
+      <span class="card-desc">發現 bug？填寫後直接通知管理員</span>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+
 </body>
 </html>

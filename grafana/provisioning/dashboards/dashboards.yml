@@ -1,11 +1,15 @@
 apiVersion: 1
 
 providers:
-  - name: default
+  - name: 'default'
+    orgId: 1
     folder: ''
     type: file
+    disableDeletion: false
+    editable: true
     options:
       path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
 
   - name: 'main-dashboards'
     orgId: 1
@@ -24,4 +28,14 @@ providers:
     editable: true
     options:
       path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false
+
+  - name: 'games'
+    orgId: 1
+    folder: '遊戲'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/games
       foldersFromFilesStructure: false

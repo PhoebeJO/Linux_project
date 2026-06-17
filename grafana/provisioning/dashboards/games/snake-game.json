@@ -1,0 +1,25 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": { "h": 26, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src='http://localhost:8888/snake.html' style='width:100%;height:900px;border:none;border-radius:10px;'></iframe>"
+      },
+      "transparent": true
+    }
+  ],
+  "title": "🐍 貪吃蛇",
+  "uid": "snake-game",
+  "version": 1,
+  "refresh": "",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser"
+}

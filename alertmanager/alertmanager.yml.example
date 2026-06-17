@@ -22,8 +22,9 @@ receivers:
         api_url: 'https://api.telegram.org'
         parse_mode: 'HTML'
         message: |
-          <b>{{ .CommonAnnotations.summary }}</b>
+          {{ if eq .Status "resolved" }}✅ <b>已解除：{{ .CommonAnnotations.summary }}</b>{{ else }}🚨 <b>告警：{{ .CommonAnnotations.summary }}</b>{{ end }}
           {{ range .Alerts }}
           • {{ .Annotations.description }}
+          • 狀態：{{ if eq .Status "resolved" }}已恢復正常{{ else }}異常中{{ end }}
           • 時間：{{ .StartsAt.Format "2006-01-02 15:04:05" }}
           {{ end }}
