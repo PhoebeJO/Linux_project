@@ -135,6 +135,29 @@ def report():
     return jsonify({'ok': True})
 
 
+@app.route('/api/history')
+def history():
+    limit  = min(int(request.args.get('limit', 50)), 200)
+    offset = int(request.args.get('offset', 0))
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT name, score, created_at FROM scores ORDER BY id DESC LIMIT ? OFFSET ?',
+        (limit, offset)
+    ).fetchall()
+    total = conn.execute('SELECT COUNT(*) as c FROM scores').fetchone()['c']
+    conn.close()
+    return jsonify({'total': total, 'rows': [dict(r) for r in rows]})
+
+@app.route('/api/history/<name>')
+def history_by_name(name):
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT score, created_at FROM scores WHERE name=? ORDER BY id DESC LIMIT 100',
+        (name,)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
 @app.route('/api/reports')
 def list_reports():
     conn = get_db()

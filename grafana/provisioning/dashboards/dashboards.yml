@@ -11,6 +11,15 @@ providers:
       path: /etc/grafana/provisioning/dashboards
       foldersFromFilesStructure: false
 
+  - name: 'main-dashboards'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
+
   - name: 'student-tools'
     orgId: 1
     folder: '學生工具'
