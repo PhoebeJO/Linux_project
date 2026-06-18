@@ -90,6 +90,7 @@ services:
       - ./student_tools/settings.yml:/app/settings.yml
       - ./student_tools/stocks.yml:/app/stocks.yml
       - ./student_tools/study_log.json:/app/study_log.json
+      - ./student_tools/news_config.yml:/app/news_config.yml
     networks:
       - monitoring
 
