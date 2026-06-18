@@ -2,3 +2,6 @@ deadlines:
 - name: 期末報告
   course: Linux
   deadline: '2026-06-24 23:59:00'
+- name: Test
+  course: Linux
+  deadline: '2026-06-18 23:59:00'

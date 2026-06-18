@@ -232,6 +232,36 @@
     </div>
 </div>
 
+<!-- 實驗三：延遲測量面板 -->
+<div style="max-width:1000px; margin:30px auto 0; background:rgba(255,255,255,0.06); border-radius:16px; padding:22px 25px;">
+    <h2 style="font-size:1.15em; margin-bottom:12px;">🔬 實驗三：股票數據延遲測量</h2>
+    <p style="opacity:0.5; font-size:0.85em; margin-bottom:15px;">點擊開始後，每次自動刷新會記錄 T0→T4 各階段延遲（毫秒），收集完畢可匯出 CSV</p>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+        <button class="btn btn-add" onclick="toggleExperiment()" id="expBtn" style="background:#e67e22;">▶ 開始收集</button>
+        <button class="btn btn-add" onclick="exportCSV()" style="background:#27ae60;">📥 匯出 CSV</button>
+        <span style="opacity:0.6; font-size:0.9em;" id="expStatus">尚未開始</span>
+        <span style="opacity:0.6; font-size:0.9em;">已收集：<b id="expCount">0</b> 筆</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; font-size:0.85em; border-collapse:collapse;">
+            <thead>
+                <tr style="opacity:0.6; text-align:left;">
+                    <th style="padding:6px 8px;">股票</th>
+                    <th style="padding:6px 8px;">價格</th>
+                    <th style="padding:6px 8px;">Δ(T1-T0)<br>API 延遲</th>
+                    <th style="padding:6px 8px;">Δ(T2-T1)<br>處理</th>
+                    <th style="padding:6px 8px;">Δ(T3-T2)<br>傳輸</th>
+                    <th style="padding:6px 8px;">Δ(T4-T3)<br>渲染</th>
+                    <th style="padding:6px 8px;">Δ(T4-T0)<br>端到端</th>
+                </tr>
+            </thead>
+            <tbody id="expTbody">
+                <tr><td colspan="7" style="text-align:center; opacity:0.3; padding:15px;">點擊「開始收集」後數據會顯示在這裡</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -276,11 +306,90 @@
         return total >= 540 && total <= 810;
     }
 
+    // ── 實驗三：延遲測量 ──
+    let expRunning = false;
+    let expData = [];
+
+    function startExperiment() {
+        expData = [];
+        expRunning = true;
+        document.getElementById('expStatus').textContent = '🔴 實驗進行中… 每次自動刷新會記錄一筆';
+        document.getElementById('expCount').textContent = '0';
+        document.getElementById('expBtn').textContent = '⏹ 停止實驗';
+        showToast('📊 實驗開始，自動收集延遲數據', 'success');
+    }
+    function stopExperiment() {
+        expRunning = false;
+        document.getElementById('expStatus').textContent = `✅ 已收集 ${expData.length} 筆，可匯出 CSV`;
+        document.getElementById('expBtn').textContent = '▶ 開始收集';
+    }
+    function toggleExperiment() {
+        if (expRunning) stopExperiment(); else startExperiment();
+    }
+    function exportCSV() {
+        if (expData.length === 0) { showToast('尚無數據', 'error'); return; }
+        const header = 'symbol,name,price,t0,t1,t2,t3,t4,dt_api_ms,dt_proc_ms,dt_transfer_ms,dt_render_ms,dt_e2e_ms\n';
+        const rows = expData.map(r =>
+            `${r.symbol},${r.name},${r.price},${r.t0},${r.t1},${r.t2},${r.t3},${r.t4},${r.dt_api},${r.dt_proc},${r.dt_transfer},${r.dt_render},${r.dt_e2e}`
+        ).join('\n');
+        const blob = new Blob([header + rows], {type: 'text/csv'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `stock_latency_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        showToast(`✅ 已匯出 ${expData.length} 筆`, 'success');
+    }
+
+    function recordLatency(stocks, t3Time) {
+        requestAnimationFrame(() => {
+            const t4Time = Date.now();
+            for (const s of stocks) {
+                if (!s.t0 || !s.t1 || !s.t2) continue;
+                const t1Ms = new Date(s.t1).getTime();
+                const t2Ms = new Date(s.t2).getTime();
+                const t0Str = s.t0;
+                let t0Ms = new Date(s.t0).getTime();
+                // t0 可能沒有時區，當作本地時間
+                const dtApi = t1Ms - t0Ms;
+                const dtProc = t2Ms - t1Ms;
+                const dtTransfer = t3Time - t2Ms;
+                const dtRender = t4Time - t3Time;
+                const dtE2e = t4Time - t0Ms;
+                expData.push({
+                    symbol: s.symbol, name: s.name, price: s.price,
+                    t0: t0Str, t1: s.t1, t2: s.t2,
+                    t3: new Date(t3Time).toISOString(),
+                    t4: new Date(t4Time).toISOString(),
+                    dt_api: dtApi, dt_proc: dtProc,
+                    dt_transfer: dtTransfer, dt_render: dtRender, dt_e2e: dtE2e
+                });
+            }
+            document.getElementById('expCount').textContent = expData.length;
+            updateExpTable();
+        });
+    }
+    function updateExpTable() {
+        const tbody = document.getElementById('expTbody');
+        if (!tbody) return;
+        const last5 = expData.slice(-5).reverse();
+        tbody.innerHTML = last5.map(r => `<tr>
+            <td>${r.symbol}</td><td>${r.price}</td>
+            <td>${r.dt_api}</td><td>${r.dt_proc}</td>
+            <td>${r.dt_transfer}</td><td>${r.dt_render}</td>
+            <td><b>${r.dt_e2e}</b></td>
+        </tr>`).join('');
+    }
+
     async function loadStocks() {
         try {
             const resp = await fetch('/api/stocks');
+            const t3Time = Date.now();
             const data = await resp.json();
             stockData = data.stocks || [];
+
+            if (expRunning && stockData.length > 0) {
+                recordLatency(stockData, t3Time);
+            }
 
             const grid = document.getElementById('stockGrid');
             if (stockData.length === 0) {

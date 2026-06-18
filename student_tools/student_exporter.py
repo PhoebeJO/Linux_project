@@ -191,11 +191,27 @@ def _fetch_stocks():
     for sym in symbols:
         try:
             t = yf.Ticker(sym)
+            # 先嘗試分鐘線取得精確成交時間（實驗用）
+            hist_1m = t.history(period='1d', interval='1m')
+            t1 = datetime.now()
+            if not hist_1m.empty:
+                t0_raw = hist_1m.index[-1]
+                if hasattr(t0_raw, 'tz_convert'):
+                    try:
+                        t0_raw = t0_raw.tz_convert('Asia/Taipei')
+                    except Exception:
+                        pass
+                t0_str = t0_raw.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                t0_str = ''
+
+            # 日線取價格和前日收盤（計算漲跌幅用）
             hist = t.history(period='5d')
             if hist.empty:
                 print(f'[股價] {sym} 無資料')
                 continue
             price = float(hist['Close'].iloc[-1])
+
             if len(hist) >= 2:
                 prev_close = float(hist['Close'].iloc[-2])
             else:
@@ -209,6 +225,10 @@ def _fetch_stocks():
                 fetch_pct = 0.0
             _stock_prev_prices[sym] = price
 
+            t2 = datetime.now()
+            t1_str = t1.strftime('%Y-%m-%d %H:%M:%S.%f')
+            t2_str = t2.strftime('%Y-%m-%d %H:%M:%S.%f')
+
             with _stock_lock:
                 _stock_cache[sym] = {
                     'name': name_map[sym],
@@ -218,7 +238,10 @@ def _fetch_stocks():
                     'fetch_change_pct': round(fetch_pct, 4),
                     'prev_fetch_price': round(prev_fetch, 2) if prev_fetch else None,
                     'updated_at': datetime.now().strftime('%H:%M:%S'),
-                    'stale': False
+                    'stale': False,
+                    't0': t0_str,
+                    't1': t1_str,
+                    't2': t2_str
                 }
             print(f'[股價] {sym} = {price:.2f} (日:{daily_pct:+.2f}% 即時:{fetch_pct:+.2f}%)')
         except Exception as e:
@@ -440,8 +463,13 @@ class Handler(BaseHTTPRequestHandler):
                     'name': s.get('name', sym),
                     'price': d.get('price'),
                     'change_pct': d.get('change_pct'),
+                    'fetch_change_pct': d.get('fetch_change_pct'),
+                    'prev_fetch_price': d.get('prev_fetch_price'),
                     'updated_at': d.get('updated_at'),
                     'stale': d.get('stale', False),
+                    't0': d.get('t0'),
+                    't1': d.get('t1'),
+                    't2': d.get('t2'),
                 }
                 if 'alert_drop_pct' in s:
                     item['alert_drop_pct'] = s['alert_drop_pct']
