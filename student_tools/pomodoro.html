@@ -108,9 +108,22 @@
         }
         .work .progress-fill { background: #e74c3c; }
         .break .progress-fill { background: #2ecc71; }
+        .nav-links {
+            position: fixed; top: 0; left: 0; width: 100%;
+            padding: 12px 30px; opacity: 0.8; z-index: 10;
+        }
+        .nav-links a { color: #fff; text-decoration: none; margin-right: 20px; font-size: 0.9em; }
+        .nav-links a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
+    <div class="nav-links">
+        <a href="/">🍅 番茄鐘</a>
+        <a href="/admin">📚 作業管理</a>
+        <a href="/stocks">📈 股價</a>
+        <a href="/weather">☀️ 天氣</a>
+        <a href="/news">📰 新聞</a>
+    </div>
     <div class="container">
         <h1>🍅 番茄鐘</h1>
         <div class="phase" id="phase">準備開始</div>

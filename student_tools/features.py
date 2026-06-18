@@ -1,5 +1,5 @@
 """
-額外功能模組：天氣預報、學習統計、AI 新聞
+額外功能模組：天氣預報、學習統計、新聞播報
 """
 import json
 import os
@@ -9,9 +9,12 @@ import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, date
 
+import yaml
+
 STUDY_LOG = '/app/study_log.json'
+NEWS_CONFIG_FILE = '/app/news_config.yml'
 WEATHER_CACHE = {}
-NEWS_CACHE = {'articles': [], 'updated_at': ''}
+NEWS_CACHE = {'articles': [], 'updated_at': '', 'query': ''}
 _weather_city = 'Taoyuan'
 
 # ══════════════════════════════
@@ -157,13 +160,28 @@ def generate_study_metrics():
     return '\n'.join(lines)
 
 # ══════════════════════════════
-# 📰 AI 新聞 (RSS)
+# 📰 新聞播報 (RSS)
 # ══════════════════════════════
 
-RSS_FEEDS = [
-    ('Google AI News', 'https://news.google.com/rss/search?q=artificial+intelligence&hl=zh-TW&gl=TW&ceid=TW:zh-Hant'),
-    ('TechCrunch AI', 'https://techcrunch.com/category/artificial-intelligence/feed/'),
-]
+def _load_news_config():
+    if not os.path.exists(NEWS_CONFIG_FILE):
+        return {'query': 'AI 人工智慧'}
+    try:
+        with open(NEWS_CONFIG_FILE, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        return data if data else {'query': 'AI 人工智慧'}
+    except:
+        return {'query': 'AI 人工智慧'}
+
+def _save_news_config(cfg):
+    with open(NEWS_CONFIG_FILE, 'w', encoding='utf-8') as f:
+        yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+def get_news_config():
+    return _load_news_config()
+
+def save_news_config(cfg):
+    _save_news_config(cfg)
 
 def _parse_rss(url, source_name):
     articles = []
@@ -196,12 +214,17 @@ def _parse_rss(url, source_name):
 
 def _fetch_news():
     global NEWS_CACHE
+    cfg = _load_news_config()
+    query = cfg.get('query', 'AI 人工智慧')
+    encoded_q = urllib.request.quote(query)
+    feeds = [
+        (f'Google News: {query}', f'https://news.google.com/rss/search?q={encoded_q}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant'),
+    ]
     all_articles = []
-    for name, url in RSS_FEEDS:
+    for name, url in feeds:
         articles = _parse_rss(url, name)
         all_articles.extend(articles)
 
-    # 去重，取前 15 筆
     seen = set()
     unique = []
     for a in all_articles:
@@ -212,9 +235,10 @@ def _fetch_news():
 
     NEWS_CACHE = {
         'articles': unique,
-        'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M')
+        'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M'),
+        'query': query
     }
-    print(f'[新聞] 取得 {len(unique)} 筆 AI 新聞')
+    print(f'[新聞] 取得 {len(unique)} 筆新聞，主題：{query}')
 
 def get_news():
     return NEWS_CACHE
@@ -224,7 +248,8 @@ def format_news_telegram():
     articles = NEWS_CACHE.get('articles', [])[:5]
     if not articles:
         return None
-    lines = ['📰 <b>AI 新聞摘要</b>\n']
+    query = NEWS_CACHE.get('query', 'AI 人工智慧')
+    lines = [f'📰 <b>{query} — 新聞摘要</b>\n']
     for i, a in enumerate(articles, 1):
         lines.append(f'{i}. <a href="{a["link"]}">{a["title"]}</a>')
         if a.get('summary'):
