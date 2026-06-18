@@ -11,7 +11,7 @@
 |------|------|
 | **這是什麼？** | 一套跑在 Docker 上的伺服器監控系統，能即時偵測 CPU / 記憶體 / 容器異常，自動推播 Telegram 告警 |
 | **跟學生有什麼關係？** | 我們把同一套監控架構延伸成學生工具：番茄鐘、作業倒數（每日 Telegram 提醒）、即時股價監控（自訂門檻告警）、天氣、自訂主題新聞、深夜提醒 |
-| **實驗做了什麼？** | 兩個量化實驗：① 告警端到端延遲測量（12 組參數 × 3 次）② cgroups CPU 限制對 API 效能的影響 |
+| **實驗做了什麼？** | 三個量化實驗：① 告警端到端延遲測量（12 組參數 × 3 次）② cgroups CPU 限制對 API 效能的影響 ③ 股票數據端到端延遲測量 |
 | **技術核心？** | Docker Compose 編排 8 個容器、Prometheus 時序資料庫、Grafana 視覺化、Alertmanager 告警、自製 Python Exporter |
 
 ---
@@ -50,6 +50,7 @@ docker-compose up -d
 6. [實驗設計](#實驗設計)
    - [實驗一：告警延遲測量](#實驗一告警端到端延遲測量)
    - [實驗二：cgroups CPU 限制](#實驗二cgroups-cpu-限制實驗)
+   - [實驗三：股票數據延遲測量](#實驗三股票數據端到端延遲測量)
 7. [Telegram 告警設定](#telegram-告警設定)
 8. [Grafana 使用指南](#grafana-使用指南)
 9. [常見問題排解](#常見問題排解)
@@ -231,8 +232,7 @@ snake-backend      Up        0.0.0.0:5000->5000/tcp
 | InstanceDown | 服務離線 | 30s | critical |
 | HomeworkDeadlineSoon | 作業 < 24h | 0s | warning |
 | HomeworkDeadlineUrgent | 作業 < 3h | 0s | critical |
-| StockPriceDrop | 股價跌幅 > 閾值 | 2m | warning |
-| StockPriceRise | 股價漲幅 > 5% | 2m | info |
+| StockPriceDrop&Rise | 股價漲跌 > 設定閾值 | 2m | info |
 | LateNightUsage | 在設定的深夜時段使用電腦 | 1m | info |
 
 ### 學生工具
@@ -503,6 +503,122 @@ docker run --rm --network monitoring williamyeh/hey -z 60s -c 50 http://snake-ba
 #### 重要補充：WSL2 架構
 
 Windows + Docker Desktop 是跑在 WSL2 裡，cgroups 由 WSL2 的 Linux 核心管理。這代表我們的實驗確實是在操作 Linux 核心的 cgroups 機制，只是透過 WSL2 虛擬化層運行。
+
+---
+
+### 實驗三：股票數據端到端延遲測量
+
+#### 研究動機
+
+本系統的股價監控功能以 fetch-to-fetch 即時波動做為告警依據，每 60 秒向 yfinance API 發起一次 HTTP 請求，前端再每 10 秒向後端輪詢最新數據。這條數據管線從「交易所撮合成交」到「使用者在瀏覽器上看到價格變動」經歷了多個階段的延遲疊加，但各階段的延遲分佈至今未被量化。
+
+對一個標榜「即時監控」的系統而言，如果整條管線的端到端延遲超過數分鐘，所謂的「即時」就失去意義，告警的時效性也會大打折扣。因此我們設計了一項量化實驗，將資料管線拆解為五個階段，分別打上時間戳，以釐清延遲的主要瓶頸在哪一段，並據此判斷目前 60 秒的後端抓取週期與 10 秒的前端輪詢週期是否足夠。
+
+#### 資料管線定義
+
+```
+交易所成交    yfinance 回應    寫入快取      前端收到 JSON    畫面渲染
+   T0 ──────── T1 ──────── T2 ──────── T3 ──────── T4
+   │            │            │            │            │
+   │  Δ(T1-T0) │  Δ(T2-T1) │  Δ(T3-T2) │  Δ(T4-T3) │
+   │  API 延遲  │  處理延遲  │  傳輸延遲  │  渲染延遲  │
+   │            │            │            │            │
+   └────────────────────────────────────────────────── │
+                    Δ(T4-T0) 端到端延遲
+```
+
+| 階段 | 代號 | 定義 | 記錄方式 |
+|------|------|------|---------|
+| 交易所成交 | T0 | 該筆成交在交易所的實際時間 | yfinance 回傳的 `hist.index[-1]`（UTC 時間戳） |
+| API 回應 | T1 | yfinance HTTP 回應抵達容器的時間 | `_fetch_stocks()` 中 `t.history()` 返回後記錄 `datetime.now()` |
+| 後端快取寫入 | T2 | 數據寫入 `_stock_cache` 字典的時間 | 寫入 cache 前記錄 `datetime.now()` |
+| 前端收到 JSON | T3 | 瀏覽器 `fetch('/api/stocks')` 收到回應的時間 | JavaScript `Date.now()` |
+| 畫面渲染完成 | T4 | DOM 更新、價格數字顯示在卡片上的時間 | `requestAnimationFrame` 回呼中記錄時間 |
+
+#### 延遲指標
+
+| 指標 | 區段 | 意義 |
+|------|------|------|
+| Δ(T1−T0) | API 資料延遲 | 交易所→Yahoo Finance→yfinance→本地容器，反映外部 API 的新鮮度 |
+| Δ(T2−T1) | 後端處理延遲 | 解析 DataFrame、計算漲跌幅、寫入快取，屬於系統內部開銷 |
+| Δ(T3−T2) | 傳輸延遲 | 後端快取→HTTP JSON 回應→前端 JavaScript |
+| Δ(T4−T3) | 渲染延遲 | JSON 解析→DOM 操作→畫面顯示 |
+| Δ(T4−T0) | 端到端延遲 | 使用者實際感受到的總延遲 |
+
+#### 實驗方法
+
+**步驟 1：後端埋點**
+
+在 `student_exporter.py` 的 `_fetch_stocks()` 中加入時間戳記錄：
+
+```python
+# T0：從 yfinance DataFrame 的 index 取得交易所時間
+t0 = hist.index[-1].to_pydatetime()
+
+# T1：HTTP 回應到達的時間（history() 返回後立即記錄）
+t1 = datetime.now()
+
+# T2：寫入 _stock_cache 前記錄
+t2 = datetime.now()
+```
+
+**步驟 2：前端埋點**
+
+在 `stocks.html` 的 fetch 回呼中記錄 T3、T4：
+
+```javascript
+const resp = await fetch('/api/stocks');
+const t3 = Date.now();  // 收到回應
+
+// 更新 DOM 後
+requestAnimationFrame(() => {
+    const t4 = Date.now();  // 渲染完成
+});
+```
+
+**步驟 3：資料收集**
+
+- **觀測時段**：台股盤中 09:00–13:30
+- **觀測標的**：台積電（2330.TW）、友達（2409.TW）
+- **樣本數量**：持續記錄 30 個 fetch 週期（約 30 分鐘），每個週期產生一組 T0–T4
+- **對照組**：將後端抓取週期從 60 秒調整為 30 秒，重複實驗
+
+#### 預期結果
+
+**表 5：各階段延遲分佈（後端 60 秒週期）**
+
+| 指標 | 平均值 | 中位數 | P95 | 最大值 |
+|------|--------|--------|-----|--------|
+| Δ(T1−T0) API 延遲 | 待測 | 待測 | 待測 | 待測 |
+| Δ(T2−T1) 處理延遲 | 待測 | 待測 | 待測 | 待測 |
+| Δ(T3−T2) 傳輸延遲 | 待測 | 待測 | 待測 | 待測 |
+| Δ(T4−T3) 渲染延遲 | 待測 | 待測 | 待測 | 待測 |
+| Δ(T4−T0) 端到端 | 待測 | 待測 | 待測 | 待測 |
+
+**表 6：抓取週期對照（60s vs 30s）**
+
+| 抓取週期 | 平均端到端延遲 | P95 端到端延遲 |
+|----------|---------------|---------------|
+| 60s | 待測 | 待測 |
+| 30s | 待測 | 待測 |
+
+#### 預期結論
+
+- Δ(T1−T0) 預計是延遲的主要瓶頸，因為 Yahoo Finance 免費資料本身即有 15–20 分鐘延遲（非交易所直連）
+- Δ(T2−T1) 和 Δ(T4−T3) 預計在毫秒等級，不構成瓶頸
+- 先前 `fast_info.last_price` 快取問題（友達 28.2 vs 實際 28.0）佐證了 API 層延遲的存在，改用 `history()` 後應有改善
+- 縮短抓取週期從 60s→30s 預計不會顯著降低 Δ(T1−T0)，因為瓶頸在 Yahoo Finance 端而非本地
+
+#### Docker / Linux 技術清單
+
+| 步驟 | 使用的技術 |
+|------|-----------|
+| 埋點記錄 | Python `datetime.now()` + JavaScript `Date.now()` 雙端時間戳 |
+| 資料來源 | yfinance `Ticker.history(period='5d')` — 容器內 HTTP 請求 |
+| 背景抓取 | Python `threading.Thread(daemon=True)` — 容器內背景執行緒 |
+| 快取機制 | Python dict + threading.Lock — 容器記憶體內快取 |
+| 前端輪詢 | JavaScript `setInterval` 10 秒 + `fetch()` API 呼叫 |
+| 容器日誌 | `docker-compose logs student-exporter` 查看埋點輸出 |
 
 ---
 
