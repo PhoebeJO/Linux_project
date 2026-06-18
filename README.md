@@ -10,7 +10,7 @@
 | 問題 | 回答 |
 |------|------|
 | **這是什麼？** | 一套跑在 Docker 上的伺服器監控系統，能即時偵測 CPU / 記憶體 / 容器異常，自動推播 Telegram 告警 |
-| **跟學生有什麼關係？** | 我們把同一套監控架構延伸成學生工具：番茄鐘、作業倒數、股價追蹤、天氣、AI 新聞、深夜提醒 |
+| **跟學生有什麼關係？** | 我們把同一套監控架構延伸成學生工具：番茄鐘、作業倒數（每日 Telegram 提醒）、即時股價監控（自訂門檻告警）、天氣、自訂主題新聞、深夜提醒 |
 | **實驗做了什麼？** | 兩個量化實驗：① 告警端到端延遲測量（12 組參數 × 3 次）② cgroups CPU 限制對 API 效能的影響 |
 | **技術核心？** | Docker Compose 編排 8 個容器、Prometheus 時序資料庫、Grafana 視覺化、Alertmanager 告警、自製 Python Exporter |
 
@@ -105,7 +105,7 @@ docker-compose up -d
 | **Alertmanager** | 9093 | 接收 Prometheus 告警，分派到 Telegram，支援靜音、分組 |
 | **Node Exporter** | 9100 | 收集主機 CPU / 記憶體 / 磁碟 / 網路指標 |
 | **cAdvisor** | 8080 | 收集 Docker 容器的資源使用狀況（含 cgroups 指標） |
-| **Student Exporter** | 8001 | 自製 Python 服務：番茄鐘、作業管理、股價、天氣、新聞、深夜提醒 |
+| **Student Exporter** | 8001 | 自製 Python 服務：番茄鐘、作業管理（含每日 Telegram 提醒）、即時股價監控、天氣、自訂主題新聞、深夜提醒 |
 | **Snake (Nginx)** | 8888 | 入口頁面 + 貪吃蛇遊戲前端 |
 | **Snake Backend** | 5000 | 貪吃蛇排行榜 API + 問題回報 + Prometheus 指標 |
 
@@ -119,9 +119,9 @@ docker-compose up -d
 | **Grafana** | http://localhost:3000 | admin / admin | 監控儀表板、學生工具、遊戲 |
 | **番茄鐘** | http://localhost:8001 | 無 | 25 分鐘專注計時 + Telegram 通知 |
 | **作業管理** | http://localhost:8001/admin | 無 | 新增/編輯作業截止日 + 深夜提醒設定 |
-| **股價監控** | http://localhost:8001/stocks | 無 | 台股/美股即時追蹤 |
+| **股價監控** | http://localhost:8001/stocks | 無 | 台股/美股即時追蹤（LIVE 每 10 秒刷新）、自訂漲跌門檻告警 |
 | **天氣預報** | http://localhost:8001/weather | 無 | 即時天氣 + 6 小時預報 |
-| **AI 新聞** | http://localhost:8001/news | 無 | AI 科技新聞 + 一鍵推送 Telegram |
+| **新聞播報** | http://localhost:8001/news | 無 | 自訂主題新聞搜尋 + 一鍵推送 Telegram |
 | Prometheus | http://localhost:9090 | 無 | 原始指標查詢（進階用） |
 | Alertmanager | http://localhost:9093 | 無 | 告警狀態管理（進階用） |
 | cAdvisor | http://localhost:8080 | 無 | 容器監控原始介面（進階用） |
@@ -237,16 +237,39 @@ snake-backend      Up        0.0.0.0:5000->5000/tcp
 
 ### 學生工具
 
-把 Prometheus 監控架構延伸到學生日常生活，所有工具的指標都進入同一條 Prometheus → Alertmanager → Telegram 的告警管線：
+把 Prometheus 監控架構延伸到學生日常生活，所有工具的指標都進入同一條 Prometheus → Alertmanager → Telegram 的告警管線。
+
+五個頁面（番茄鐘、作業管理、股價、天氣、新聞）頂部共用統一導航列，可隨時切換：
 
 | 工具 | 網址 | 功能 |
 |------|------|------|
 | **番茄鐘** | :8001 | 25 分鐘專注 → 5 分鐘休息自動循環，每 4 輪長休息。完成時 Telegram 通知，自動記錄學習時數 |
-| **作業管理** | :8001/admin | 新增/編輯/刪除作業截止日，設定深夜使用提醒時段。到期前自動告警 |
-| **股價監控** | :8001/stocks | 追蹤台股（2330.TW 台積電）、美股（AAPL、TSLA），台灣慣例紅漲綠跌，大漲大跌 Telegram 通知 |
+| **作業管理** | :8001/admin | 新增/編輯/刪除作業截止日，設定深夜提醒時段與每日作業提醒時間。到期前自動告警 |
+| **股價監控** | :8001/stocks | 即時追蹤台股/美股，LIVE 模式每 10 秒自動刷新，⚡ 立即更新按鈕，價格變動閃爍動畫，每支股票可自訂漲跌門檻，超過門檻自動 Telegram 通知 |
 | **天氣預報** | :8001/weather | 即時溫度/濕度/風速，6 小時預報卡片，降雨 > 30% 自動提醒帶傘。可切換城市 |
-| **AI 新聞** | :8001/news | 自動抓取 Google News AI、TechCrunch AI 的 RSS，一鍵推送到 Telegram |
+| **新聞播報** | :8001/news | 自訂搜尋主題（預設 AI 人工智慧），8 個快速主題標籤一鍵切換，Google News RSS 即時抓取，一鍵推送到 Telegram |
+| **每日作業提醒** | 自動觸發 | 每天在設定時間（預設 09:00）自動 Telegram 推送所有未到期作業及剩餘天數，顏色分級（🔴 < 3 天 🟡 < 7 天 🟢 充裕） |
 | **深夜提醒** | 自動觸發 | 在設定時段（預設 0:00~3:00）瀏覽器跳出全螢幕提醒 + 音效 + 系統通知 |
+
+#### 股價監控功能細節
+
+| 功能 | 說明 |
+|------|------|
+| LIVE 即時模式 | 後端每 60 秒從 Yahoo Finance 拉取最新報價，前端每 10 秒刷新畫面 |
+| ⚡ 立即更新 | 點擊按鈕立即觸發後端重新抓取，2 秒後顯示最新價格 |
+| 價格閃爍 | 價格變動時卡片閃紅（漲）/ 閃綠（跌），視覺上即時感知 |
+| 全域門檻 | 設定所有股票的預設漲跌告警百分比 |
+| 個股門檻 | 每支股票可單獨設定門檻，覆蓋全域設定（留空 = 使用全域） |
+| 每日去重 | 同一支股票每天最多告警一次，避免重複通知 |
+
+#### 新聞播報功能細節
+
+| 功能 | 說明 |
+|------|------|
+| 自訂主題 | 輸入任意關鍵字搜尋 Google News，範圍越小搜尋結果越精準 |
+| 快速標籤 | 內建 8 個熱門主題一鍵切換：AI 人工智慧、台積電、比特幣、半導體、Tesla、台股、Netflix、資安 |
+| 自動抓取 | 每 2 小時自動更新，也可手動刷新 |
+| Telegram 推送 | 一鍵將前 5 則新聞摘要推送到 Telegram |
 
 #### 學生工具的 Prometheus 指標
 
@@ -544,7 +567,7 @@ docker-compose restart alertmanager student-exporter
 | 學生工具 | 學習統計 | 每日/每週學習時數圖表 |
 | 學生工具 | 股價監控 | 股價走勢 + 漲跌幅 |
 | 學生工具 | 天氣預報 | 即時天氣資訊 |
-| 學生工具 | AI 新聞 | 最新 AI 科技新聞 |
+| 學生工具 | 新聞播報 | 自訂主題新聞搜尋 |
 | 遊戲 | 貪吃蛇 | 遊戲嵌入 + 排行榜 |
 | 遊戲 | 問題回報 | Bug 回報介面 |
 
@@ -623,14 +646,15 @@ monitoring-stack/
 │   ├── student_exporter.py               # 主程式：HTTP 伺服器 + Prometheus 指標
 │   ├── features.py                       # 天氣 / 學習統計 / 新聞模組
 │   ├── pomodoro.html                     # 番茄鐘介面
-│   ├── admin.html                        # 作業管理 + 深夜提醒設定
-│   ├── stocks.html                       # 股價監控介面
+│   ├── admin.html                        # 作業管理 + 深夜提醒 + 每日提醒設定
+│   ├── stocks.html                       # 股價監控介面（LIVE 即時模式）
 │   ├── weather.html                      # 天氣預報介面
-│   ├── news.html                         # AI 新聞介面
+│   ├── news.html                         # 新聞播報介面（自訂主題）
 │   ├── late-night-alert.js               # 深夜提醒（全螢幕+音效+系統通知）
 │   ├── deadlines.yml                     # 作業資料（持久化）
-│   ├── settings.yml                      # 深夜提醒設定（持久化）
-│   ├── stocks.yml                        # 股票清單（持久化）
+│   ├── settings.yml                      # 深夜提醒 + 每日作業提醒設定（持久化）
+│   ├── stocks.yml                        # 股票清單 + 個股門檻（持久化）
+│   ├── news_config.yml                   # 新聞搜尋主題設定（持久化）
 │   ├── study_log.json                    # 學習紀錄（持久化）
 │   ├── .env                              # 環境變數（不上傳）
 │   └── .env.example                      # 環境變數範本
@@ -672,5 +696,7 @@ monitoring-stack/
 | **Prometheus** | 業界雲原生監控標準，pull-based 架構天然適合容器，與 Grafana 整合最好 |
 | **Grafana** | 最成熟的開源視覺化平台，支援 provisioning 自動載入儀表板 |
 | **自製 Python Exporter** | 市面上沒有「學生生活指標」的 Exporter，自己寫讓所有工具統一進入 Prometheus 告警管線 |
+| **yfinance `history()` API** | 比 `fast_info` 更準確，每次發 HTTP 請求取得最新價格，避免快取導致報價延遲 |
+| **Google News RSS** | 免費免 API Key，支援任意關鍵字搜尋，中文繁體結果優先 |
 | **Windows + WSL2** | 課程環境限制，但 Docker Desktop 透過 WSL2 運行 Linux 核心，cgroups 實驗有效 |
 | **Telegram** | 免費、API 簡單、同學都有帳號，最低摩擦力的告警管道 |

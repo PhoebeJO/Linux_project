@@ -1,13 +1,13 @@
-alert_drop_pct: 3.0
-alert_rise_pct: 5.0
+alert_drop_pct: 1
+alert_rise_pct: 1
 stocks:
 - symbol: 2330.TW
   name: 台積電
-- symbol: 2317.TW
-  name: 鴻海
-- symbol: AAPL
-  name: Apple
-- symbol: TSLA
-  name: Tesla
 - symbol: 0050.TW
   name: YuantaETF
+- symbol: 2409.TW
+  name: 友達
+- symbol: 3481.TW
+  name: 群創
+  alert_drop_pct: 1.0
+  alert_rise_pct: 1.0

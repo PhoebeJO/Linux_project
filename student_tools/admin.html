@@ -168,6 +168,9 @@
         <div class="nav-links">
             <a href="/">🍅 番茄鐘</a>
             <a href="/admin">📚 作業管理</a>
+            <a href="/stocks">📈 股價</a>
+            <a href="/weather">☀️ 天氣</a>
+            <a href="/news">📰 新聞</a>
         </div>
 
         <h1>📚 作業截止日期管理</h1>
@@ -223,6 +226,25 @@
                 <button class="btn btn-add" onclick="saveSettings()" style="background:#9b59b6;">💾 儲存設定</button>
             </div>
             <div id="lateNightStatus" style="margin-top: 15px; padding: 12px 18px; border-radius: 10px; font-size: 0.95em;"></div>
+        </div>
+
+        <!-- 每日作業提醒 -->
+        <div class="add-form" style="margin-top: 25px; border-left: 4px solid #f39c12;">
+            <h2>📋 每日作業提醒</h2>
+            <p style="opacity:0.6; margin-bottom:15px; font-size:0.9em;">
+                每天在指定時間透過 Telegram 推送所有未到期作業的剩餘天數
+            </p>
+            <div class="form-row">
+                <div class="form-group" style="min-width:100px; flex:0.5;">
+                    <label>提醒時間</label>
+                    <select id="reminderHour" style="padding:10px 14px; border:1px solid rgba(255,255,255,0.15); border-radius:10px; background:rgba(255,255,255,0.08); color:#fff; font-size:1em; outline:none;">
+                    </select>
+                </div>
+                <div class="form-group" style="flex:2;">
+                    <p style="opacity:0.5; font-size:0.85em; padding-top:20px;">每天到這個時間會自動發送 Telegram，列出所有作業還剩幾天</p>
+                </div>
+                <button class="btn btn-add" onclick="saveSettings()" style="background:#f39c12;">💾 儲存</button>
+            </div>
         </div>
     </div>
 
@@ -404,10 +426,12 @@
         function initHourSelects() {
             const startSel = document.getElementById('startHour');
             const endSel = document.getElementById('endHour');
+            const reminderSel = document.getElementById('reminderHour');
             for (let h = 0; h < 24; h++) {
                 const label = h.toString().padStart(2, '0') + ':00';
                 startSel.innerHTML += `<option value="${h}">${label}</option>`;
                 endSel.innerHTML += `<option value="${h}">${label}</option>`;
+                reminderSel.innerHTML += `<option value="${h}">${label}</option>`;
             }
         }
 
@@ -419,6 +443,7 @@
                 document.getElementById('startHour').value = ln.start_hour || 1;
                 document.getElementById('endHour').value = ln.end_hour || 6;
                 document.getElementById('lateMsg').value = ln.message || '';
+                document.getElementById('reminderHour').value = settings.deadline_reminder_hour || 9;
                 updateLateNightStatus(ln.start_hour || 1, ln.end_hour || 6);
             } catch (e) {
                 console.log('載入設定失敗:', e);
@@ -447,6 +472,7 @@
             const start = parseInt(document.getElementById('startHour').value);
             const end = parseInt(document.getElementById('endHour').value);
             const msg = document.getElementById('lateMsg').value.trim();
+            const reminderHour = parseInt(document.getElementById('reminderHour').value);
             if (!msg) {
                 showToast('請填寫提醒訊息', 'error');
                 return;
@@ -456,7 +482,8 @@
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        late_night: { start_hour: start, end_hour: end, message: msg }
+                        late_night: { start_hour: start, end_hour: end, message: msg },
+                        deadline_reminder_hour: reminderHour
                     })
                 });
                 const result = await resp.json();
